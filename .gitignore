@@ -1,0 +1,24 @@
+# Compiled code
+*.o
+*.pyc
+*.class
+
+# Build output
+/build/
+/dist/
+
+# Dependency directories
+node_modules/
+vendor/
+
+# System files
+.DS_Store
+Thumbs.db
+
+# IDE/Editor files
+.idea/
+.vscode/
+
+# Sensitive files
+.env
+config/secrets.yml

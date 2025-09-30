@@ -1,0 +1,166 @@
+@import "tailwindcss";
+
+body {
+  font-family: 'galindo', cursive, 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  margin: 0;
+}
+
+:root {
+  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+
+  color-scheme: light dark;
+  color: rgba(255, 255, 255, 0.87);
+  background-color: transparent;
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.galindo-regular {
+  font-family: "Galindo", sans-serif;
+  font-weight: 400;
+  font-style: normal;
+}
+
+.knewave-regular {
+  font-family: "Knewave", system-ui;
+  font-weight: 400;
+  font-style: normal;
+}
+
+
+a {
+  font-weight: 500;
+  color: #646cff;
+  text-decoration: inherit;
+}
+a:hover {
+  color: #535bf2;
+}
+
+body {
+  margin: 0;
+  display: flex;
+  place-items: center;
+  min-width: 100vw;
+  min-height: 100vh;
+}
+
+h1 {
+  font-size: 3.2em;
+  line-height: 1.1;
+}
+
+
+    /* styles.css or similar */
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: #10122b; /* Light gray track */
+      border-radius: 4px;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #272f6d; /* Dark gray thumb */
+      border-radius: 4px;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+      background: #0c0d20; /* Darker gray on hover */
+    }
+
+        /* styles.css or similar */
+    .m-custom-scrollbar::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    .m-custom-scrollbar::-webkit-scrollbar-track {
+      background: #10122b; /* Light gray track */
+      border-radius: 4px;
+    }
+
+    .m-custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #009934; /* Dark gray thumb */
+      border-radius: 4px;
+    }
+
+    .m-custom-scrollbar::-webkit-scrollbar-thumb:hover {
+      background: #35c766; /* Darker gray on hover */
+    }
+
+
+        /* styles.css or similar */
+    .top-custom-scrollbar::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    .top-custom-scrollbar::-webkit-scrollbar-track {
+      background: #2b2f66; /* Light gray track */
+      border-radius: 4px;
+    }
+
+    .top-custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #0d0e1a; /* Dark gray thumb */
+      border-radius: 2px;
+      padding: 0.6em 1.2em;
+    }
+
+    .top-custom-scrollbar::-webkit-scrollbar-thumb:hover {
+      background: #6368c2; /* Darker gray on hover */
+    }
+
+.nav-button {
+  border-radius: 8px;
+  border: 1px solid transparent;
+  padding: 0.6em 1.2em;
+  font-size: 1em;
+  font-weight: 500;
+  font-family: inherit;
+  background-color: transparent;
+  cursor: pointer;
+  transition: border-color 0.25s;
+}
+.nav-button:hover {
+  border-color: transparent;
+  background-color: #0f132b;
+}
+.nav-button:focus,
+.nav-button:focus-visible {
+  outline: 0px auto -webkit-focus-ring-color;
+  background-color: #0f132b;
+}
+
+
+@media (prefers-color-scheme: light) {
+  :root {
+    color: #272f6d;
+    background-color: #ffffff;
+  }
+  a:hover {
+    color: #747bff;
+  }
+
+}
+
+    .container {
+        display: flex;
+        justify-content: space-between; /* Pushes content to the left and right edges */
+        width: 100%; /* Or a specific width */
+        /* Add other styling as needed */
+    }
+
+    .left-content {
+        background-color: transparent
+        /* Optional: Add specific styling for left content */
+    }
+
+    .right-content {
+        background-color: transparent;
+        /* Optional: Add specific styling for right content */
+    }
