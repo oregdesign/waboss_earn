@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "scripts": {
     "dev": "cd waboss-frontend && npm run dev",
-    "build": "cd waboss-frontend && npm install && npm run build",
+    "build": "npm install && npm run build",
     "start": "npm --prefix waboss-backend start"
   },
   "dependencies": {

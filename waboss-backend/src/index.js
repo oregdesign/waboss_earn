@@ -1,7 +1,8 @@
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
 const authRoutes = require('./routes/auth');
-const { initDb } = require('./db/database');  // Adjusted path if needed
+const { initDb } = require('./db/database');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -9,12 +10,19 @@ const PORT = process.env.PORT || 5000;
 app.use(cors());
 app.use(express.json());
 
-// Routes
+// API routes
 app.use('/api', authRoutes);
+
+// Serve frontend build (Vite React)
+const frontendDist = path.join(__dirname, '../../waboss-frontend/dist');
+app.use(express.static(frontendDist));
+
+app.get('*', (req, res) => {
+  res.sendFile(path.join(frontendDist, 'index.html'));
+});
 
 // Init DB then start server
 initDb().then(() => {
-  const PORT = process.env.PORT || 5000;
   app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
   });

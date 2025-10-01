@@ -1,28 +1,38 @@
 const { Pool } = require('pg');
+const axios = require('axios');
 require('dotenv').config();
 
-const pool = new Pool({
-  host: process.env.PG_HOST,
-  port: process.env.PG_PORT,
-  user: process.env.PG_USER,
-  password: process.env.PG_PASSWORD,
-  database: process.env.PG_DATABASE,
-  max: 20,  // Max connections in pool
-  idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 2000,
-});
+let pool;
+
+if (process.env.DATABASE_URL) {
+  // For Dokku / production (single URL)
+  pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+    max: 20,
+    idleTimeoutMillis: 30000,
+    connectionTimeoutMillis: 2000,
+  });
+} else {
+  // For local development (use .env individual vars)
+  pool = new Pool({
+    host: process.env.PG_HOST,
+    port: process.env.PG_PORT,
+    user: process.env.PG_USER,
+    password: process.env.PG_PASSWORD,
+    database: process.env.PG_DATABASE,
+    max: 20,
+    idleTimeoutMillis: 30000,
+    connectionTimeoutMillis: 2000,
+  });
+}
 
 async function initDb() {
   const client = await pool.connect();
   try {
     console.log('Connected to PostgreSQL database.');
 
-    // Optional: Drop tables for schema reset (uncomment for dev if needed)
-    // await client.query('DROP TABLE IF EXISTS temp_whatsapp_links CASCADE');
-    // await client.query('DROP TABLE IF EXISTS whatsapp_accounts CASCADE');
-    // await client.query('DROP TABLE IF EXISTS users CASCADE');
-
-    // Create users table (added whatsapp_phone to match CSV/schema)
+    // --- your schema creation logic stays the same ---
     await client.query(`
       CREATE TABLE IF NOT EXISTS users (
         id SERIAL PRIMARY KEY,
@@ -34,10 +44,8 @@ async function initDb() {
         whatsapp_phone TEXT
       )
     `);
-    console.log('Users table created or already exists.');
 
-    // Create temp_whatsapp_links table
-        await client.query(`
+    await client.query(`
       CREATE TABLE IF NOT EXISTS temp_whatsapp_links (
         id SERIAL PRIMARY KEY,
         user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -51,16 +59,12 @@ async function initDb() {
         CONSTRAINT unique_user_phone UNIQUE (user_id, phone)
       )
     `);
-    console.log('Temp WhatsApp links table created or already exists (with unique constraint).');
 
-    // Clean up old temp_whatsapp_links records (older than 24 hours)
     await client.query(`
       DELETE FROM temp_whatsapp_links
       WHERE created_at < CURRENT_TIMESTAMP - INTERVAL '24 hours'
     `);
-    console.log('Cleaned up old temp_whatsapp_links records.');
 
-    // Create whatsapp_accounts table
     await client.query(`
       CREATE TABLE IF NOT EXISTS whatsapp_accounts (
         id SERIAL PRIMARY KEY,
@@ -76,27 +80,22 @@ async function initDb() {
         created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
       )
     `);
-    console.log('WhatsApp accounts table created or already exists.');
 
-    // Populate unique_id for existing whatsapp_accounts records (adapted to async/PG)
     const { rows } = await client.query(`
       SELECT id, phone FROM whatsapp_accounts WHERE unique_id IS NULL
     `);
 
-    if (rows.length === 0) {
-      console.log('No whatsapp_accounts records need unique_id update.');
-    } else {
+    if (rows.length > 0) {
       await populateUniqueIds(rows);
     }
   } catch (err) {
     console.error('Error initializing database:', err.message);
-    throw err;  // Rethrow to handle in index.js
+    throw err;
   } finally {
     client.release();
   }
 }
 
-// Function to populate unique_id for existing whatsapp_accounts records
 async function populateUniqueIds(rows) {
   try {
     const response = await axios.get('https://maxyprime.com/api/get/wa.accounts', {
@@ -107,7 +106,7 @@ async function populateUniqueIds(rows) {
     });
 
     if (response.data.status !== 200) {
-      console.error('Failed to fetch wa.accounts for unique_id update:', response.data.message);
+      console.error('Failed to fetch wa.accounts:', response.data.message);
       return;
     }
 
@@ -117,9 +116,10 @@ async function populateUniqueIds(rows) {
       for (const row of rows) {
         const account = accounts.find((acc) => acc.phone === row.phone);
         if (account && account.unique) {
-          await client.query(`
-            UPDATE whatsapp_accounts SET unique_id = $1 WHERE id = $2
-          `, [account.unique, row.id]);
+          await client.query(
+            `UPDATE whatsapp_accounts SET unique_id = $1 WHERE id = $2`,
+            [account.unique, row.id]
+          );
           console.log(`Updated unique_id for phone ${row.phone}`);
         }
       }
@@ -131,7 +131,6 @@ async function populateUniqueIds(rows) {
   }
 }
 
-// Export the pool for queries
 module.exports = {
   query: async (text, params) => {
     const client = await pool.connect();
@@ -141,5 +140,5 @@ module.exports = {
       client.release();
     }
   },
-  initDb,  // Call this on server start
+  initDb,
 };
