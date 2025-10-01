@@ -2,7 +2,21 @@ const { Pool } = require('pg');
 const axios = require('axios');
 require('dotenv').config();
 
+let connectionString = process.env.DATABASE_URL;
+
 let pool;
+
+module.exports = {
+  query: async (text, params) => {
+    const client = await pool.connect();
+    try {
+      return await client.query(text, params);
+    } finally {
+      client.release();
+    }
+  },
+  initDb,
+};
 
 if (process.env.DATABASE_URL) {
   // For Dokku / production (single URL)
@@ -142,3 +156,4 @@ module.exports = {
   },
   initDb,
 };
+
