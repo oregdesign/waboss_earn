@@ -3,7 +3,7 @@
   "private": true,
   "version": "1.0.0",
   "scripts": {
-    "dev": "cd waboss-frontend && npm run dev",
+    "dev": "npm run dev",
     "build": "npm install && npm run build",
     "start": "npm --prefix waboss-backend start"
   },
