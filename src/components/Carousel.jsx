@@ -3,7 +3,7 @@ import { useState } from "react";
 const slides = [
   {
     id: 1,
-    title: "Ubah WhatsApp Jadi Cuan ! 🚀",
+    title: "Ubah WhatsApp Jadi Cuan !",
     text: "WaBoss bikin WhatsApp kamu bisa jadi mesin penghasil uang. Cukup hubungkan akun WhatsApp kamu, langsung bisa mulai dapet penghasilan tanpa perlu jualan atau cari-cari klien. WhatsApp kamu yang kerja, kamu tinggal nikmatin hasilnya.",
     bg: "bg-[url('/src/assets/slide1.svg')] bg-no-repeat",
   },
@@ -39,7 +39,7 @@ export default function Carousel() {
             index === current ? "translate-x-0" : "translate-x-full"
           } ${slide.bg}`}
         >
-          <h2 className="text-2xl md:text-3xl font-galindo mb-4 text-right text-green-600">{slide.title}</h2>
+          <h2 className="quicksand-title text-2xl md:text-3xl mb-4 text-right text-green-600">{slide.title}</h2>
           <p className="font-sans text-center text-sm md:text-lg opacity-90 text-white">{slide.text}</p>
         </div>
       ))}
@@ -47,13 +47,13 @@ export default function Carousel() {
       {/* Controls */}
       <button
         onClick={prevSlide}
-        className="absolute top-1/2 left-2 -translate-y-1/2 bg-black/40 text-white p-2 rounded-full hover:bg-black/70"
+        className="cursor-pointer absolute top-1/2 left-2 -translate-y-1/2 bg-black/10 text-white p-2 rounded-full hover:bg-black/70"
       >
         ‹
       </button>
       <button
         onClick={nextSlide}
-        className="absolute top-1/2 right-2 -translate-y-1/2 bg-black/40 text-white p-2 rounded-full hover:bg-black/70"
+        className="cursor-pointer absolute top-1/2 right-2 -translate-y-1/2 bg-black/10 text-white p-2 rounded-full hover:bg-black/70"
       >
         ›
       </button>
@@ -64,7 +64,7 @@ export default function Carousel() {
           <button
             key={index}
             onClick={() => setCurrent(index)}
-            className={`w-3 h-3 rounded-full ${
+            className={`w-2 h-2 px-2 mx-2 rounded-full cursor-pointer ${
               current === index ? "bg-white" : "bg-gray-400"
             }`}
           ></button>

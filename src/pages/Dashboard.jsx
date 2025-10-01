@@ -613,8 +613,8 @@ const fetchServers = async () => {
         <div className="pt-8 w-32 h-32"><img src="../src/assets/logo.svg"></img></div>
       </div>
 
-        <p className="text-gray-400 text-sm">
-            Welcome back, {user?.username}
+        <p className="text-gray-400 text-sm w-full space-y-2 mb-2 ml-5">
+            Selamat datang, <span className="quicksand-title text-green-600">{user?.username}</span>
         </p>
       <nav className="flex-1 w-full space-y-2">
         {sidebarItems.map((item) => (
@@ -633,7 +633,7 @@ const fetchServers = async () => {
         ))}
         <button
           onClick={handleLogout}
-          className="nav-button w-full flex items-center p-3 rounded-lg text-gray-300 font-futuristic hover:bg-gray-800 hover:text-neonGreen hover:shadow-neon transition duration-300"
+          className="cursor-pointer w-full flex items-center p-3 rounded-lg text-gray-300 font-futuristic hover:bg-gray-800 hover:text-neonGreen hover:shadow-neon transition duration-300"
         >
           <FaTimes className="mr-2 text-neonGreen" />
           Logout
@@ -655,7 +655,7 @@ const fetchServers = async () => {
     <div className="bg-[#191e45] row-span-2 col-start-4 row-start-1 rounded-xl pt-6">
       <h2 className="text-xl font-futuristic font-bold text-neonGreen mb-4 ml-4"></h2>
       <div className="w-full">
-      <p className="text-[#404ba3] text-sm mb-1 ml-4 font-mono">Total Earnings</p>
+      <p className="text-[#404ba3] text-sm mb-1 ml-4 font-mono">Total Penghasilan</p>
       <p className="text-5xl font-mono font-bold text-green-600 mb-4 ml-4 pb-4">
         {earningsLoading
           ? "..."
@@ -667,7 +667,7 @@ const fetchServers = async () => {
       </p>
       </div>
       <div className="w-full">
-      <p className="text-[#404ba3] text-sm mb-1 ml-4 font-mono">Total Messages Sent</p>
+      <p className="text-[#404ba3] text-sm mb-1 ml-4 font-mono">Jumlah Pesan Terkirim</p>
       <p className="text-4xl font-mono font-bold text-[#f18c27] mb-4 ml-4 pb-4">
         {earningsLoading ? "..." : `${earnings.total_sent || 0}`}
       </p>
@@ -676,7 +676,7 @@ const fetchServers = async () => {
 
     {/* WhatsApp Accounts */}
     <div className="row-span-4 col-start-5 row-start-1 bg-[#191e45] border border-gray-800 rounded-xl p-6 flex flex-col">
-      <h2 className="text-xl font-mono font-bold text-[#404ba3] mb-4">WhatsApp Accounts</h2>
+      <h2 className="text-xl font-mono font-bold text-[#404ba3] mb-4">Whatsapp Tertaut</h2>
       <div className="flex-1 overflow-y-auto custom-scrollbar space-y-3 bg-[#11152d] rounded-lg">
         {linkedNumbers.length > 0 ? (
           linkedNumbers.map((account, index) => (
@@ -697,7 +697,7 @@ const fetchServers = async () => {
             </div>
           ))
         ) : (
-          <p className="text-gray-500 text-sm text-center">No linked numbers yet</p>
+          <p className="text-gray-500 text-sm text-center">Belum ada akun whatsapp yang tertaut</p>
         )}
       </div>
             <button
@@ -707,14 +707,14 @@ const fetchServers = async () => {
         }}
         className="cursor-pointer w-full bg-green-600 text-[#10122b] font-futuristic font-semibold py-3 px-3  rounded-xl hover:bg-green-600 hover:border-green-300 hover:shadow-[0_0_2px_#00b93e,inset_0_0_2px_#00b93e,0_0_5px_#32d96a,0_0_15px_#32d96a,0_0_15px_#32d96a] hover:text-[#fafafa] transition duration-300 mb-3 mt-6"
       >
-        Link WhatsApp
+        Tautkan Whatsapp
       </button>
 
     </div>
 
     {/* Payments */}
     <div className="row-span-3 col-start-5 row-start-5 bg-[#191e45] rounded-xl p-6">
-      <h2 className="text-xl font-mono font-bold text-[#404ba3] mb-4">Current Balance</h2>
+      <h2 className="text-xl font-mono font-bold text-[#404ba3] mb-4">Saldo Tersedia</h2>
       <div className="bg-[#272f6d] rounded-xl p-4 mb-4">
         
         <p className="text-2xl font-mono font-bold text-green-600">
@@ -735,10 +735,10 @@ const fetchServers = async () => {
 	C6.03,8.97,6.2,9.07,6.36,9.15c1.23,0.67,2.5,0.62,3.79,0.19c1.18-0.39,2.34-0.82,3.52-1.22c1.3-0.44,2.6-0.57,3.88,0.07
 	c0.36,0.18,0.71,0.38,0.71,0.85c0.01,1.72,0.01,3.43,0.01,5.15C18.26,14.46,18.31,14.73,18.07,15.13z"/>
     </svg>
-        Request Withdrawal
+        Tarik Penghasilan
       </button>
       <button className="w-full bg-gray-800 border border-gray-700 text-gray-300 font-futuristic font-medium py-2 px-4 rounded-xl hover:bg-gray-700 hover:shadow-neon">
-        Payment History
+        Histori Penarikan
       </button>
     </div>
 
@@ -762,17 +762,17 @@ const fetchServers = async () => {
       <div className="grid grid-cols-2 p-1">
         
             <div className="">
-              <p className="text-gray-400 text-sm">
-                Welcome back,
+              <p className="text-gray-400 text-sm quicksan-content">
+                Selamat datang,
               </p>
-              <p className="text-xl text-green-600">{user?.username}</p>
+              <p className="text-xl quicksand-title text-green-600">{user?.username}</p>
             </div>
             <div className="justify-items-end">
               <button
                 onClick={handleLogout}
                 className="text-right w-full rounded-lg text-gray-300 hover:text-green-600 transition duration-300 cursor-pointer"
               >                
-              Logout
+              Keluar
               </button>
             </div>           
       </div>

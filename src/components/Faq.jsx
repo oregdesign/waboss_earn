@@ -3,29 +3,29 @@ import { ChevronDown } from "lucide-react"; // icon (comes from lucide-react)
 
 const faqs = [
   {
-    question: "What is WaBoss?",
+    question: "Apa itu Waboss?",
     answer:
-      "WaBoss is a platform where you can earn money by monetizing your WhatsApp or doing micro tasks. Just connect your WhatsApp, and you’ll get paid every time your number is used for sending OTPs, marketing messages, or promo status updates.",
+      "WaBoss adalah web app tempat kamu bisa dapetin penghasilan tambahan dari WhatsApp.",
   },
   {
-    question: "How do I earn with WaBoss?",
+    question: "Bagaimana cara dapet duit di WaBoss?",
     answer:
-      "Every time your WhatsApp sends a message through our system (like OTP or marketing messages), you earn Rp.30 per message. You can track your earnings directly from the dashboard.",
+      "Setiap kali WhatsApp kamu sukses ngirim pesan (kayak OTP atau pesan promo), kamu dapet Rp.30 per pesan. Semakin banyak tugas yang selesai, semakin besar juga penghasilan kamu.",
   },
   {
-    question: "Where does the money come from?",
+    question: "Apa saya perlu membalas chat atau ngobrol sama customer?",
     answer:
-      "Our partner platform, Maxyprime.com, provides affordable WhatsApp messaging for businesses. They share revenue with WaBoss users whose numbers are being used to send messages.",
+      "Tidak perlu. Semua berjalan otomatis. Kamu tidak perlu membalas siapa pun — WaBoss yang urus kirimannya.",
   },
   {
-    question: "Is it safe and legal?",
+    question: "Apakah Aman menggunakan webapp WaBoss?",
     answer:
-      "Yes. WaBoss does not allow any activities that break Indonesian law or ITE regulations. No political campaigns, gambling promotion, spam, or vulgar content are allowed.",
+      "Aman. WaBoss cuma pake nomor WhatsApp kamu buat ngirim tugas yang udah disetujui. Kita nggak pernah ngakses chat pribadi atau kontak kamu.",
   },
   {
-    question: "How do I withdraw my earnings?",
+    question: "Bagaimana cara tarik saldo?",
     answer:
-      "You can withdraw your balance into real cash through the withdrawal feature on your dashboard. Just follow the instructions there.",
+      "Saldo bisa ditarik kapan aja ke rekening bank lokal kamu. Minimum penarikan saldo adalah Rp.50.000",
   },
 ];
 
@@ -38,17 +38,17 @@ export default function FAQ() {
 
   return (
     <div className="max-w-3xl mx-auto p-6">
-      <h2 className="text-3xl font-galindo text-center text-green-600 mb-6">
-        Frequently Asked Questions
+      <h2 className="text-3xl quicksand-title text-center text-green-600 mb-6">
+        Pertanyaan Umum
       </h2>
       <div className="space-y-4">
         {faqs.map((faq, index) => (
           <div
             key={index}
-            className="rounded-xl shadow-sm"
+            className="rounded-xl shadow-sm bg-linear-45 from-[#272f6d] to-[#191e45]"
           >
             <button
-              className="flex items-center justify-between w-full p-4 text-left font-medium text-white"
+              className="cursor-pointer flex items-center justify-between w-full p-4 text-left quicksand-title text-white"
               onClick={() => toggleFAQ(index)}
             >
               {faq.question}
@@ -59,7 +59,7 @@ export default function FAQ() {
               />
             </button>
             {openIndex === index && (
-              <div className="p-4 text-white font-sans rounded-b-xl">
+              <div className="text-white quicksand-content rounded-b-xl m-4">
                 {faq.answer}
               </div>
             )}

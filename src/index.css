@@ -1,8 +1,27 @@
 @import "tailwindcss";
 
 body {
-  font-family: 'galindo', cursive, 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family: 'Quicksand', sans-serif;
+  font-weight: 500;
   margin: 0;
+}
+
+.h2 {
+  font-family: "Knewave", System-ui;
+}
+
+.quicksand-title {
+  font-family: "Quicksand", sans-serif;
+  font-optical-sizing: auto;
+  font-weight: 700;
+  font-style: bold;
+}
+
+.quicksand-content {
+  font-family: "Quicksand", sans-serif;
+  font-optical-sizing: auto;
+  font-weight: 300;
+  font-style: normal;
 }
 
 :root {
@@ -113,6 +132,7 @@ h1 {
 
     .top-custom-scrollbar::-webkit-scrollbar-thumb:hover {
       background: #6368c2; /* Darker gray on hover */
+      cursor: grabbing;
     }
 
 .nav-button {
