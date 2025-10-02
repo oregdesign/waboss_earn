@@ -26,7 +26,7 @@ function LinkWhatsApp() {
     try {
       const token = localStorage.getItem("token");
       const res = await axios.post(
-        "http://localhost:5000/api/link-whatsapp",
+        "/api/link-whatsapp",
         { sid: data.sid },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -54,7 +54,7 @@ function LinkWhatsApp() {
             clearInterval(pollInterval);
             const token = localStorage.getItem("token");
             await axios.post(
-              "http://localhost:5000/api/update-whatsapp-status",
+              "/api/update-whatsapp-status",
               { infolink, status: "linked" },
               { headers: { Authorization: `Bearer ${token}` } }
             );

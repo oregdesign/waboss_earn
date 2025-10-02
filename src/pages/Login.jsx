@@ -28,7 +28,7 @@ function Login() {
     setIsLoading(true);
     setApiError(null);
     try {
-      const res = await axios.post("http://localhost:5000/api/login", {
+      const res = await axios.post("/api/login", {
         email: data.email,
         password: data.password,
       });
@@ -50,7 +50,7 @@ function Login() {
     setOtpError(null);
 
     try {
-      await axios.post("http://localhost:5000/api/send-otp", { phone: phoneNumber });
+      await axios.post("/api/send-otp", { phone: phoneNumber });
       setOtpSent(true);
     } catch (error) {
       setOtpError(error.response?.data?.message || "Failed to send OTP. Try again.");
@@ -66,7 +66,7 @@ function Login() {
     setOtpError(null);
 
     try {
-      const res = await axios.post("http://localhost:5000/api/verify-otp", {
+      const res = await axios.post("/api/verify-otp", {
         phone: phoneNumber,
         otp: otpCode,
       });

@@ -44,7 +44,7 @@ const fetchServers = async () => {
   try {
     const token = localStorage.getItem("token");
     const response = await axios.get(
-      "http://localhost:5000/api/get-whatsapp-servers",
+      "/api/get-whatsapp-servers",
       { headers: { Authorization: `Bearer ${token}` } }
     );
 
@@ -78,7 +78,7 @@ const fetchServers = async () => {
         console.warn("No token found in localStorage");
         return setLinkedNumbers([]);
       }
-      const response = await axios.get("http://localhost:5000/api/get-linked-accounts", {
+      const response = await axios.get("/api/get-linked-accounts", {
         headers: { Authorization: `Bearer ${token}` },
       });
       console.log("get-linked-accounts response:", response.data);
@@ -104,7 +104,7 @@ const fetchServers = async () => {
         return;
       }
 
-      const response = await axios.get("http://localhost:5000/api/get-earnings", {
+      const response = await axios.get("/api/get-earnings", {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -165,7 +165,7 @@ const fetchServers = async () => {
     // If relinking, get the current status first
     if (isRelink) {
       const statusResponse = await axios.post(
-        "http://localhost:5000/api/check-whatsapp-account",
+        "/api/check-whatsapp-account",
         { phone },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -208,7 +208,7 @@ const fetchServers = async () => {
     try {
       const token = localStorage.getItem("token");
       const checkResponse = await axios.post(
-        "http://localhost:5000/api/check-whatsapp-account",
+        "/api/check-whatsapp-account",
         { phone: data.phone },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -239,7 +239,7 @@ const fetchServers = async () => {
     try {
       const token = localStorage.getItem("token");
       const response = await axios.post(
-        "http://localhost:5000/api/check-whatsapp-account",
+        "/api/check-whatsapp-account",
         { phone },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -285,7 +285,7 @@ const fetchServers = async () => {
       try {
         const token = localStorage.getItem("token");
         const response = await axios.post(
-          "http://localhost:5000/api/check-whatsapp-account",
+          "/api/check-whatsapp-account",
           { phone },
           { headers: { Authorization: `Bearer ${token}` } }
         );
@@ -353,7 +353,7 @@ const fetchServers = async () => {
   try {
     const token = localStorage.getItem("token");
     await axios.post(
-      "http://localhost:5000/api/save-linked-account",
+      "/api/save-linked-account",
       { phone, unique_id, status, sid: selectedSid },
       { headers: { Authorization: `Bearer ${token}` } }
     );
