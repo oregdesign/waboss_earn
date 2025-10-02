@@ -2,7 +2,7 @@ const express = require('express');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const axios = require('axios');
-const db = require('../db/database');
+const { pool: db } = require('../db/database');
 const url = require('url');
 require('dotenv').config();
 

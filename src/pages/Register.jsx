@@ -19,7 +19,7 @@ function Register() {
     setFormStatus('loading');
     setApiError(null);
     try {
-      await axios.post("/api/register", {
+      await axios.post("/", {
         username: data.username,
         email: data.email,
         password: data.password,
