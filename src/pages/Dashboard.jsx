@@ -179,7 +179,7 @@ const fetchServers = async () => {
       : { sid, phone };
       
     const linkResponse = await axios.post(
-      `http://localhost:5000/api${endpoint}`,
+      `/api${endpoint}`,
       payload,
       { headers: { Authorization: `Bearer ${token}` } }
     );
