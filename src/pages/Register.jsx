@@ -2,6 +2,7 @@ import { useForm } from "react-hook-form";
 import axios from "axios";
 import { useNavigate, Link } from "react-router-dom";
 import { useState } from "react";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
 
 function Register() {
   const {
@@ -19,7 +20,7 @@ function Register() {
     setFormStatus('loading');
     setApiError(null);
     try {
-      await axios.post("/api/register", {
+      await axios.post(`${API_BASE_URL}/register`, {
         username: data.username,
         email: data.email,
         password: data.password,

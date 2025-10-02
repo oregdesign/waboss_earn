@@ -3,6 +3,7 @@ import axios from "axios";
 import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import useAuthStore from "../store/useAuthStore";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
 
 function Login() {
   const {
@@ -28,7 +29,7 @@ function Login() {
     setIsLoading(true);
     setApiError(null);
     try {
-      const res = await axios.post("/api/login", {
+      const res = await axios.post(`${API_BASE_URL}/login`, {
         email: data.email,
         password: data.password,
       });

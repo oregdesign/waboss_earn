@@ -7,7 +7,13 @@ const { initDb } = require('./db/database');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-app.use(cors());
+app.use(cors({
+  origin: [
+    'http://localhost:5173',  // Local development
+    'https://wabos.netlify.app',  // Replace with your actual Netlify URL
+  ],
+  credentials: true
+}));
 app.use(express.json());
 
 // API routes
