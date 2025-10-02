@@ -7,7 +7,7 @@ import Carousel from "../components/Carousel";
 import CarouselMobile from "../components/CarouselMobile";
 import Faq from "../components/Faq";
 import WhatsappListMobile from "../components/WhatsappListMobile.jsx";
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
+const API_URL = import.meta.env.VITE_API_URL || '/api';
 
 function Dashboard() {
   const { user, logout } = useAuthStore();
@@ -45,7 +45,7 @@ const fetchServers = async () => {
   try {
     const token = localStorage.getItem("token");
     const response = await axios.get(
-      `${API_BASE_URL}/get-whatsapp-servers`,
+      `${API_URL}/get-whatsapp-servers`,
       { headers: { Authorization: `Bearer ${token}` } }
     );
 
@@ -79,7 +79,7 @@ const fetchServers = async () => {
         console.warn("No token found in localStorage");
         return setLinkedNumbers([]);
       }
-      const response = await axios.get(`${API_BASE_URL}/get-linked-accounts`, {
+      const response = await axios.get(`${API_URL}/get-linked-accounts`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       console.log("get-linked-accounts response:", response.data);
@@ -105,7 +105,7 @@ const fetchServers = async () => {
         return;
       }
 
-      const response = await axios.get(`${API_BASE_URL}/get-earnings`, {
+      const response = await axios.get(`${API_URL}/get-earnings`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -166,7 +166,7 @@ const fetchServers = async () => {
     // If relinking, get the current status first
     if (isRelink) {
       const statusResponse = await axios.post(
-        `${API_BASE_URL}/check-whatsapp-account`,
+        `${API_URL}/check-whatsapp-account`,
         { phone },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -209,7 +209,7 @@ const fetchServers = async () => {
     try {
       const token = localStorage.getItem("token");
       const checkResponse = await axios.post(
-        `${API_BASE_URL}/check-whatsapp-account`,
+        `${API_URL}/check-whatsapp-account`,
         { phone: data.phone },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -240,7 +240,7 @@ const fetchServers = async () => {
     try {
       const token = localStorage.getItem("token");
       const response = await axios.post(
-        `${API_BASE_URL}/check-whatsapp-account`,
+        `${API_URL}/check-whatsapp-account`,
         { phone },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -286,7 +286,7 @@ const fetchServers = async () => {
       try {
         const token = localStorage.getItem("token");
         const response = await axios.post(
-          `${API_BASE_URL}/check-whatsapp-account`,
+          `${API_URL}/check-whatsapp-account`,
           { phone },
           { headers: { Authorization: `Bearer ${token}` } }
         );
@@ -354,7 +354,7 @@ const fetchServers = async () => {
   try {
     const token = localStorage.getItem("token");
     await axios.post(
-      `${API_BASE_URL}/save-linked-account`,
+      `${API_URL}/save-linked-account`,
       { phone, unique_id, status, sid: selectedSid },
       { headers: { Authorization: `Bearer ${token}` } }
     );
