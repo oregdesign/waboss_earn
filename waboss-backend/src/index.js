@@ -10,6 +10,7 @@ const PORT = process.env.PORT || 5000;
 app.use(cors({
   origin: [
     'http://localhost:5173',  // Local development
+    'https://waboss.maxyprime.com',
     'https://wabos.netlify.app',  // Replace with your actual Netlify URL
   ],
   credentials: true
