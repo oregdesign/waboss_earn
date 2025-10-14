@@ -1,7 +1,10 @@
+// Updated Register.jsx
 import { useForm } from "react-hook-form";
 import axios from "axios";
 import { useNavigate, Link } from "react-router-dom";
 import { useState } from "react";
+import useAuthStore from "../store/useAuthStore"; // Assuming this exists based on Login.jsx
+
 const API_URL = import.meta.env.VITE_API_URL || '/api';
 
 function Register() {
@@ -13,28 +16,45 @@ function Register() {
     mode: "onBlur",
   });
   const navigate = useNavigate();
+  const { login } = useAuthStore();
   const [apiError, setApiError] = useState(null);
-  const [formStatus, setFormStatus] = useState('idle'); // New state for form status
+  const [formStatus, setFormStatus] = useState('idle');
 
   const onSubmit = async (data) => {
     setFormStatus('loading');
     setApiError(null);
     try {
-      await axios.post(`${API_URL}/register`, {
-        username: data.username,
+      const res = await axios.post(`${API_URL}/register`, {
         email: data.email,
         password: data.password,
-        whatsapp_phone: data.whatsapp_phone,
       });
+      login(res.data.user);
+      localStorage.setItem("token", res.data.token);
       setFormStatus('success');
-      setTimeout(() => navigate("/login"), 2000); // Redirect after 2 seconds
+      setTimeout(() => navigate("/dashboard"), 2000);
     } catch (error) {
       setApiError(
         error.response?.data?.message ||
           "Registration failed. Please try again."
       );
       setFormStatus('error');
-      setTimeout(() => setFormStatus('idle'), 3000); // Reset to idle after 3 seconds for retry
+      setTimeout(() => setFormStatus('idle'), 3000);
+    }
+  };
+
+  const handleGoogleAuth = async (response) => {
+    setFormStatus('loading');
+    setApiError(null);
+    try {
+      const res = await axios.post(`${API_URL}/auth/google`, { token: response.credential });
+      login(res.data.user);
+      localStorage.setItem("token", res.data.token);
+      setFormStatus('success');
+      setTimeout(() => navigate("/dashboard"), 2000);
+    } catch (error) {
+      setApiError(error.response?.data?.message || "Google signup failed.");
+      setFormStatus('error');
+      setTimeout(() => setFormStatus('idle'), 3000);
     }
   };
 
@@ -45,7 +65,7 @@ function Register() {
       <div className="pointer-events-none absolute bottom-10 right-0 h-80 w-80 rounded-full bg-neonGreen/10 blur-3xl" />
 
       {/* Main Content */}
-      <main className="flex-grow pt-24 px-4 overflow-x-hidden bg-[#272f6d] bg-[url('/src/assets/hero.svg')] bg-no-repeat bg-bottom bg-cover">
+      <main className="flex-grow pt-24 px-4 overflow-x-hidden bg-[#272f6d]">
         <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
           {/* Left: Headline + Form */}
           <section className="md:items-center space-y-6">
@@ -90,24 +110,6 @@ function Register() {
                     )}
                     <form autoComplete="off" onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                       <div>
-                        <label htmlFor="username" className="sr-only">Nama Pengguna</label>
-                        <input class="invalid:border-pink-500 invalid:text-pink-600 focus:border-sky-500 focus:outline focus:outline-sky-500 focus:invalid:border-pink-500 focus:invalid:outline-pink-500
-                        disabled:border-gray-200 disabled:bg-gray-50 disabled:text-gray-500 disabled:shadow-none dark:disabled:border-gray-700 dark:disabled:bg-gray-800/20"
-                          id="username"
-                          {...register("username", {
-                            required: "Username is required",
-                            minLength: { value: 3, message: "Username must be at least 3 characters" },
-                          })}
-                          placeholder="Username"
-                          className={`w-full p-3 bg-[#272f6d] rounded-md focus:outline-none focus:ring-2 text-white placeholder-gray-400 font-futuristic ${
-                            errors.username ? "border-neonRed focus:ring-neonRed" : "border-gray-700 focus:ring-neonGreen focus:shadow-neon"
-                          } transition duration-300`}
-                        />
-                        {errors.username && (
-                          <p className="text-neonRed text-sm mt-1 font-futuristic">{errors.username.message}</p>
-                        )}
-                      </div>
-                      <div>
                         <label htmlFor="email" className="sr-only">Email</label>
                         <input
                           id="email"
@@ -123,27 +125,6 @@ function Register() {
                         />
                         {errors.email && (
                           <p className="text-neonRed text-sm mt-1 font-futuristic">{errors.email.message}</p>
-                        )}
-                      </div>
-                      <div>
-                        <label htmlFor="whatsapp_phone" className="sr-only">No Wa Bisnis</label>
-                        <input
-                          id="whatsapp_phone"
-                          {...register("whatsapp_phone", {
-                            required: "WhatsApp phone number is required",
-                            pattern: {
-                              value: /^\+62\d{9,13}$/,
-                              message: "Masukan nomor WA indonesia yang valid (e.g., +628123456789)",
-                            },
-                          })}
-                          type="tel"
-                          placeholder="WhatsApp Phone Number (e.g., +628123456789)"
-                          className={`w-full p-3 bg-[#272f6d] rounded-md focus:outline-none focus:ring-2 text-white placeholder-gray-400 font-futuristic ${
-                            errors.whatsapp_phone ? "border-neonRed focus:ring-neonRed" : "border-gray-700 focus:ring-neonGreen focus:shadow-neon"
-                          } transition duration-300`}
-                        />
-                        {errors.whatsapp_phone && (
-                          <p className="text-neonRed text-sm mt-1 font-futuristic">{errors.whatsapp_phone.message}</p>
                         )}
                       </div>
                       <div>
@@ -187,10 +168,11 @@ function Register() {
                       >
                         Mendaftar
                       </button>
-                      <p className="text-center text-sm text-gray-300 font-futuristic mt-3">
-                        Sudah Mendaftar? <Link to="/login" className="text-neonGreen font-medium hover:text-green-600 transition duration-300">Login di sini</Link>
-                      </p>
                     </form>
+                    
+                    <p className="text-center text-sm text-gray-300 font-futuristic mt-3">
+                      Sudah Mendaftar? <Link to="/login" className="text-neonGreen font-medium hover:text-green-600 transition duration-300">Login di sini</Link>
+                    </p>
                   </>
                 )}
               </div>

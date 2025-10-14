@@ -56,6 +56,7 @@ export default function WhatsappListMobile({ linkedNumbers, setIsModalOpen }) {
                 <p className="text-gray-500 text-sm text-center">
                   No linked numbers yet
                 </p>
+                
               )}
             </div>
           </motion.div>
