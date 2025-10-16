@@ -17,7 +17,6 @@
     "autoprefixer": "^10.4.21",
     "axios": "^1.11.0",
     "framer-motion": "^12.23.22",
-    "google-auth-library": "^10.4.0",
     "jsonwebtoken": "^9.0.2",
     "lottie-react": "^2.4.1",
     "lucide-react": "^0.544.0",

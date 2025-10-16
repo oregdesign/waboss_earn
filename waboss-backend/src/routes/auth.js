@@ -1,61 +1,90 @@
 const express = require('express');
-const bcrypt = require('bcrypt');
+const bcryptjs = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const axios = require('axios');
 const { pool: db } = require('../db/database');
 const url = require('url');
+const nodemailer = require('nodemailer');
+const crypto = require('crypto');
+const { OAuth2Client } = require("google-auth-library");
+const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 require('dotenv').config();
 
-
+const otpStore = new Map();
 const router = express.Router();
 
-// ... (keep your register and login routes as they are)
 
-router.post('/register', async (req, res) => {
-  const { username, email, password, whatsapp_phone } = req.body;
-  if (!username || !email || !password || !whatsapp_phone) {
-    return res.status(400).json({ message: 'All fields are required' });
-  }
+router.post("/register", async (req, res) => {
+  const { email, password } = req.body;
+
+  if (!email || !password)
+    return res.status(400).json({ message: "Email and password are required" });
 
   try {
-    const validateResponse = await axios.get('https://maxyprime.com/api/validate/whatsapp', {
-      params: {
-        secret: process.env.MAXYPRIME_API_SECRET,
-        unique: process.env.MAXYPRIME_VALIDATE_UNIQUE,
-        phone: whatsapp_phone,
-      },
-      headers: { 'Content-Type': 'application/json' },
+    // Auto-generate username from email
+    const username = email.split("@")[0];
+
+    // Check for existing user
+    const { rows } = await db.query("SELECT * FROM users WHERE email = $1", [email]);
+    if (rows.length > 0)
+      return res.status(400).json({ message: "Email sudah terdaftar." });
+
+    // Hash password
+    const hashedPassword = await bcryptjs.hash(password, 10);
+
+    // Insert into users
+    await db.query(
+      "INSERT INTO users (username, email, password) VALUES ($1, $2, $3)",
+      [username, email, hashedPassword]
+    );
+
+    res.status(201).json({ message: "Pendaftaran berhasil." });
+  } catch (error) {
+    console.error("Register server error:", error.message);
+    res.status(500).json({ message: "Terjadi kesalahan pada server." });
+  }
+});
+
+router.post("/auth/google", async (req, res) => {
+  const { token } = req.body;
+
+  try {
+    // Verify Google token
+    const ticket = await client.verifyIdToken({
+      idToken: token,
+      audience: process.env.GOOGLE_CLIENT_ID,
     });
 
-    if (validateResponse.data.status !== 200) {
-      return res.status(400).json({ message: 'Invalid WhatsApp number' });
+    const payload = ticket.getPayload();
+    const { email, name } = payload;
+
+    // Check if user exists
+    const { rows } = await db.query("SELECT * FROM users WHERE email = $1", [email]);
+    let user = rows[0];
+
+    // If not, create a new one automatically
+    if (!user) {
+      const randomPassword = Math.random().toString(36).slice(-8);
+      const hashedPassword = await bcryptjs.hash(randomPassword, 10);
+
+      const insert = await db.query(
+        "INSERT INTO users (username, email, password) VALUES ($1, $2, $3) RETURNING *",
+        [name || email.split("@")[0], email, hashedPassword]
+      );
+      user = insert.rows[0];
     }
 
-    const validatedPhone = validateResponse.data.data.phone;
-    const { rows } = await db.query(
-      'SELECT * FROM users WHERE username = $1 OR email = $2 OR whatsapp_phone = $3',
-      [username, email, validatedPhone]
+    // Create JWT for session
+    const jwtToken = jwt.sign(
+      { id: user.id, email: user.email },
+      process.env.JWT_SECRET,
+      { expiresIn: "2h" }
     );
 
-    if (rows.length > 0) {
-      return res.status(400).json({ message: 'Username, email, or WhatsApp phone already exists' });
-    }
-
-    const hashedPassword = await bcrypt.hash(password, 10);
-    await db.query(
-      'INSERT INTO users (username, email, password, whatsapp_phone) VALUES ($1, $2, $3, $4)',
-      [username, email, hashedPassword, validatedPhone]
-    );
-    res.status(201).json({ message: 'User registered successfully' });
+    res.json({ token: jwtToken, user });
   } catch (error) {
-    console.error('Register server error:', error.message);
-    if (error.response) {
-      res.status(error.response.status || 500).json({
-        message: error.response.data.message || 'Failed to validate WhatsApp number',
-      });
-    } else {
-      res.status(500).json({ message: 'Server error' });
-    }
+    console.error("Google auth error:", error);
+    res.status(401).json({ message: "Google authentication failed" });
   }
 });
 
@@ -76,7 +105,7 @@ router.post('/login', async (req, res) => {
       return res.status(401).json({ message: 'Invalid email or password' });
     }
 
-    const isMatch = await bcrypt.compare(password, user.password);
+    const isMatch = await bcryptjs.compare(password, user.password);
     if (!isMatch) {
       console.log('Password mismatch for:', email);
       return res.status(401).json({ message: 'Invalid email or password' });
@@ -103,100 +132,95 @@ router.post('/login', async (req, res) => {
   }
 });
 
-// --- OTP ROUTES (send + verify) ---
-router.post('/send-otp', async (req, res) => {
-  const { phone } = req.body;
-  if (!phone) return res.status(400).json({ message: 'Phone number is required' });
+// --- SEND OTP ---
+router.post("/send-otp", async (req, res) => {
+  const { email } = req.body;
+  if (!email) return res.status(400).json({ message: "Email is required" });
 
   try {
-    const formData = new URLSearchParams();
-    formData.append('secret', process.env.MAXYPRIME_API_SECRET);
-    formData.append('type', 'whatsapp');
-    formData.append('message', 'Your OTP is {{otp}}');
-    formData.append('phone', phone);
-    formData.append('account', process.env.MAXYPRIME_ACCOUNT);
-    formData.append('expire', '300');
-    formData.append('priority', '2');
-
-    const response = await axios.post('https://maxyprime.com/api/send/otp', formData, {
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    });
-
-    if (response.data.status !== 200) {
-      return res.status(response.data.status || 500).json({
-        message: response.data.message || 'Failed to send OTP',
-      });
+    const { rows } = await db.query("SELECT * FROM users WHERE email = $1", [email]);
+    if (rows.length === 0) {
+      return res.status(404).json({ message: "Email not found" });
     }
 
-    res.json({
-      message: 'OTP sent successfully',
-      data: response.data.data,
-    });
-  } catch (error) {
-    console.error('Send OTP error:', error.message);
-    if (error.response) console.error('Response:', error.response.data);
-    res.status(500).json({ message: 'Failed to send OTP' });
-  }
-});
+    // Generate 6-digit OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
-router.post('/verify-otp', async (req, res) => {
-  const { otp } = req.body;
-  if (!otp) return res.status(400).json({ message: 'OTP code is required' });
+    // Save OTP with 5-minute expiry
+    otpStore.set(email, { otp, expires: Date.now() + 5 * 60 * 1000 });
 
-  try {
-    const response = await axios.get('https://maxyprime.com/api/get/otp', {
-      params: {
-        secret: process.env.MAXYPRIME_API_SECRET,
-        otp,
+    // Configure your mailer
+    const transporter = nodemailer.createTransport({
+      service: "gmail", // or use your SMTP
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS,
       },
-      headers: { 'Content-Type': 'application/json' },
     });
 
-    if (response.data.status !== 200) {
-      return res.status(response.data.status || 500).json({
-        message: response.data.message || 'Invalid OTP',
-      });
-    }
+    const mailOptions = {
+      from: `"WABoss Support" <${process.env.EMAIL_USER}>`,
+      to: email,
+      subject: "WABoss Password Reset OTP",
+      html: `
+        <h3>Password Reset Request</h3>
+        <p>Here is your OTP code to reset your password:</p>
+        <h2>${otp}</h2>
+        <p>This code will expire in 5 minutes.</p>
+      `,
+    };
 
-    res.json({
-      message: 'OTP verified successfully',
-      data: response.data.data,
-    });
+    await transporter.sendMail(mailOptions);
+    console.log(`✅ OTP sent to ${email}: ${otp}`);
+
+    res.json({ message: "OTP sent to your email." });
   } catch (error) {
-    console.error('Verify OTP error:', error.message);
-    if (error.response) console.error('Response:', error.response.data);
-    res.status(500).json({ message: 'Failed to verify OTP' });
+    console.error("Send OTP error:", error.message);
+    res.status(500).json({ message: "Failed to send OTP" });
   }
 });
 
-router.post('/reset-password', async (req, res) => {
-  const { phone, otp, newPassword } = req.body;
+// --- VERIFY OTP ---
+router.post("/verify-otp", async (req, res) => {
+  const { email, otp } = req.body;
+  if (!email || !otp) return res.status(400).json({ message: "Email and OTP are required" });
 
-  if (!phone || !otp || !newPassword) {
-    return res.status(400).json({ message: 'Phone, OTP, and new password are required' });
+  const record = otpStore.get(email);
+  if (!record) return res.status(400).json({ message: "OTP not found or expired" });
+
+  if (record.otp !== otp) return res.status(400).json({ message: "Invalid OTP" });
+  if (Date.now() > record.expires) {
+    otpStore.delete(email);
+    return res.status(400).json({ message: "OTP expired" });
   }
 
-  try {
-    // ⚠️ Removed second MaxyPrime verification call
-    // We trust OTP already verified at frontend step
-
-    const { rows } = await db.query('SELECT * FROM users WHERE whatsapp_phone = $1', [phone]);
-    const user = rows[0];
-
-    if (!user) {
-      return res.status(404).json({ message: 'No user found with this phone number' });
-    }
-
-    const hashedPassword = await bcrypt.hash(newPassword, 10);
-    await db.query('UPDATE users SET password = $1 WHERE id = $2', [hashedPassword, user.id]);
-
-    res.json({ message: 'Password reset successfully' });
-  } catch (error) {
-    console.error('Reset password error:', error.message);
-    res.status(500).json({ message: 'Failed to reset password' });
-  }
+  // Mark as verified
+  otpStore.set(email, { ...record, verified: true });
+  res.json({ message: "OTP verified successfully" });
 });
 
+// --- RESET PASSWORD ---
+router.post("/reset-password", async (req, res) => {
+  const { email, otp, newPassword } = req.body;
+
+  if (!email || !otp || !newPassword)
+    return res.status(400).json({ message: "Email, OTP, and new password are required" });
+
+  const record = otpStore.get(email);
+  if (!record || record.otp !== otp || !record.verified)
+    return res.status(400).json({ message: "Invalid or unverified OTP" });
+
+  if (Date.now() > record.expires) {
+    otpStore.delete(email);
+    return res.status(400).json({ message: "OTP expired" });
+  }
+
+  const hashedPassword = await bcryptjs.hash(newPassword, 10);
+  await db.query("UPDATE users SET password = $1 WHERE email = $2", [hashedPassword, email]);
+
+  otpStore.delete(email);
+  res.json({ message: "Password reset successful. You can now log in." });
+});
 
 router.get('/get-whatsapp-servers', async (req, res) => {
   const token = req.headers.authorization?.split(' ')[1];

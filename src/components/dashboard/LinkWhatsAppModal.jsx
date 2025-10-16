@@ -1,6 +1,7 @@
 import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, QrCode, Loader2, CheckCircle, RefreshCcw } from "lucide-react";
+import video from '../../../src/assets/tautkan1.mp4'
 
 const LinkWhatsAppModal = ({
   isModalOpen,
@@ -25,12 +26,12 @@ const LinkWhatsAppModal = ({
             initial={{ scale: 0.8, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.8, opacity: 0 }}
-            className="bg-[#1b1f3b] rounded-2xl p-6 w-[90%] max-w-md shadow-xl relative border border-blue-800/50"
+            className="bg-[#1b1f3b] rounded-2xl p-6 w-[90%] max-w-md shadow-xl"
           >
             {/* Close Button */}
             <button
               onClick={() => setIsModalOpen(false)}
-              className="absolute top-3 right-3 text-gray-400 hover:text-white transition"
+              className="absolute right-8 text-gray-400 hover:text-white transition"
             >
               <X className="w-6 h-6" />
             </button>
@@ -42,8 +43,12 @@ const LinkWhatsAppModal = ({
             {/* Status Display */}
             {status === "idle" && (
               <div className="text-center">
+                <video autoPlay loop muted playsInline className="rounded-2xl border-2 border-green-800 mb-3">
+  <source src={video} type="video/mp4" />
+</video>
+                
                 <p className="text-gray-400 text-sm mb-4">
-                  Tekan tombol di bawah untuk membuat QR baru.
+                  Pindai kode QR yang akan di tampilkan dengan aplikasi whatsapp anda.
                 </p>
                 <button
                   onClick={handleGenerateQr}
@@ -65,7 +70,7 @@ const LinkWhatsAppModal = ({
                   <img
                     src={qrImage}
                     alt="QR Code"
-                    className="w-48 h-48 object-contain mt-4 border border-green-500 rounded-lg p-2"
+                    className="w-64 h-64 object-contain mt-4 border border-green-500 rounded-lg p-2"
                   />
                 )}
               </div>
@@ -81,7 +86,7 @@ const LinkWhatsAppModal = ({
 
                 <button
                   onClick={() => setIsModalOpen(false)}
-                  className="mt-6 bg-green-700 hover:bg-green-800 px-5 py-2 rounded-lg text-white font-medium transition"
+                  className="mt-1 bg-green-700 hover:bg-green-800 px-2 py-2 rounded-lg text-white font-medium transition"
                 >
                   Tutup
                 </button>

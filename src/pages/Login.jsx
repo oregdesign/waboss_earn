@@ -3,6 +3,9 @@ import axios from "axios";
 import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import useAuthStore from "../store/useAuthStore";
+import { useEffect } from "react";
+
+const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 const API_URL = import.meta.env.VITE_API_URL || '/api';
 
 function Login() {
@@ -19,11 +22,47 @@ function Login() {
 
   // Forgot password state
   const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [emailForReset, setEmailForReset] = useState("");
   const [otpSent, setOtpSent] = useState(false);
-  const [phoneNumber, setPhoneNumber] = useState("");
   const [otpCode, setOtpCode] = useState("");
-  const [otpLoading, setOtpLoading] = useState(false);
+  const [otpVerified, setOtpVerified] = useState(false);
+  const [newPassword, setNewPassword] = useState("");
   const [otpError, setOtpError] = useState(null);
+  const [otpLoading, setOtpLoading] = useState(false);
+
+  useEffect(() => {
+    /* global google */
+    if (window.google) {
+      google.accounts.id.initialize({
+        client_id: GOOGLE_CLIENT_ID,
+        callback: handleGoogleResponse,
+      });
+
+      google.accounts.id.renderButton(
+        document.getElementById("google-signup-btn"),
+        { 
+          theme: "outline", 
+          size: "large", 
+          text: "signin_with"
+        }
+      );
+    }
+  }, []);
+
+  const handleGoogleResponse = async (response) => {
+    try {
+      // response.credential = Google ID token
+      const { data } = await axios.post(`${API_URL}/auth/google`, {
+        token: response.credential,
+      });
+
+      localStorage.setItem("token", data.token);
+      navigate("/dashboard");
+    } catch (err) {
+      console.error("Google signup failed:", err);
+      alert("Google sign-in failed. Please try again.");
+    }
+  };
 
   const onSubmit = async (data) => {
     setIsLoading(true);
@@ -43,99 +82,78 @@ function Login() {
     }
   };
 
-  const handleForgotPassword = async () => {
-    if (!phoneNumber) return setOtpError("Phone number is required");
-    if (!/^\+\d{10,15}$/.test(phoneNumber)) return setOtpError("Phone must start with + and contain 10–15 digits");
-
-    setOtpLoading(true);
-    setOtpError(null);
-
-    try {
-      await axios.post("/api/send-otp", { phone: phoneNumber });
-      setOtpSent(true);
-    } catch (error) {
-      setOtpError(error.response?.data?.message || "Failed to send OTP. Try again.");
-    } finally {
-      setOtpLoading(false);
-    }
-  };
-
-  const handleVerifyOtp = async () => {
-  if (!otpCode) return setOtpError("OTP code is required");
-
+  const handleSendOtp = async () => {
+  if (!emailForReset) return setOtpError("Email is required");
   setOtpLoading(true);
-  setOtpError(null);
-
   try {
-    const res = await axios.post("/api/verify-otp", { otp: otpCode });
-    if (res.data.message.includes("verified")) {
-      setOtpVerified(true);
-    } else {
-      setOtpError("Invalid OTP. Please try again.");
-    }
-  } catch (error) {
-    setOtpError(error.response?.data?.message || "Invalid OTP. Please try again.");
+    await axios.post(`${API_URL}/send-otp`, { email: emailForReset });
+    setOtpSent(true);
+    setOtpError(null);
+  } catch (err) {
+    setOtpError(err.response?.data?.message || "Failed to send OTP");
   } finally {
     setOtpLoading(false);
   }
-  };;
+};
 
-  const handleResetPassword = async () => {
+// --- verify OTP ---
+const handleVerifyOtp = async () => {
+  if (!otpCode) return setOtpError("OTP is required");
+  setOtpLoading(true);
+  try {
+    await axios.post(`${API_URL}/verify-otp`, { email: emailForReset, otp: otpCode });
+    setOtpVerified(true);
+    setOtpError(null);
+  } catch (err) {
+    setOtpError(err.response?.data?.message || "Invalid OTP");
+  } finally {
+    setOtpLoading(false);
+  }
+};
+
+// --- reset password ---
+const handleResetPassword = async () => {
   if (!newPassword || newPassword.length < 6)
     return setOtpError("Password must be at least 6 characters");
 
   setOtpLoading(true);
-  setOtpError(null);
-
   try {
-    await axios.post("/api/reset-password", {
-      phone: phoneNumber,
+    await axios.post(`${API_URL}/reset-password`, {
+      email: emailForReset,
       otp: otpCode,
       newPassword,
     });
-
     alert("Password berhasil diubah! Silakan login kembali.");
     resetForgotPassword();
-  } catch (error) {
-    setOtpError(error.response?.data?.message || "Failed to reset password.");
+  } catch (err) {
+    setOtpError(err.response?.data?.message || "Failed to reset password.");
   } finally {
     setOtpLoading(false);
   }
-  };
+};
 
-  const [otpVerified, setOtpVerified] = useState(false);
-  const [newPassword, setNewPassword] = useState("");
-  const resetForgotPassword = () => {
-    setShowForgotPassword(false);
-    setOtpSent(false);
-    setPhoneNumber("");
-    setOtpCode("");
-    setOtpError(null);
-  };
+// --- reset ---
+const resetForgotPassword = () => {
+  setShowForgotPassword(false);
+  setOtpSent(false);
+  setOtpVerified(false);
+  setEmailForReset("");
+  setOtpCode("");
+  setNewPassword("");
+  setOtpError(null);
+};
 
   return (
-    <div className="w-screen min-h-screen relative flex flex-col overflow-x-hidden">
+    <div className="w-screen min-h-screen flex flex-col bg-gradient-to-tr from-green-900 to-indigo-800">
       {/* Main Content */}
-      <main className="flex-grow pt-24 px-4 overflow-x-hidden bg-[#272f6d] bg-[url('/src/assets/hero.svg')] bg-no-repeat bg-bottom bg-cover">
+      <main className="flex flex-grow pt-24 px-4 items-center justify-center">
         <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
           {/* Left: Headline + Form */}
-          <section className="space-y-6">
-            <header className="animate-fadeIn">
-              <h1 className="text-[#f18c27] text-4xl md:text-5xl font-futuristic font-bold leading-tight">
-                {showForgotPassword
-                  ? otpSent
-                    ? "Verify OTP"
-                    : "Forgot Password"
-                  : "Selamat bergabung!"}
-              </h1>
-              {!showForgotPassword && (
-                <p className="mt-2 text-gray-300 font-futuristic">
-                  Silahkan login untuk menautkan akun whatsapp anda, dan mulai mendapatkan penghasilan.
-                </p>
-              )}
-            </header>
-
+          <section className="space-y-6">           
             <div className="bg-[#191e45] border border-gray-800 shadow-neon rounded-2xl p-8 w-full max-w-md animate-fadeIn">
+              <h1 className="text-green-600 text-lg text-center mb-4 md:text-5xl font-futuristic font-bold">
+                Login
+              </h1>
               {/* Error messages */}
               {apiError && !showForgotPassword && (
                 <div className="bg-red-900/50 text-neonRed p-3 rounded-md mb-4 text-sm font-futuristic animate-fadeIn">
@@ -152,74 +170,56 @@ function Login() {
               {showForgotPassword ? (
   otpSent ? (
     otpVerified ? (
-      // Step 3: New Password Form
+      // Step 3: Reset Password
       <>
         <p className="text-gray-300 text-center mb-6 text-sm font-futuristic">
-          Masukan kata sandi baru untuk nomor <strong>{phoneNumber}</strong>
+          Masukkan kata sandi baru untuk email <strong>{emailForReset}</strong>
         </p>
-        <div className="space-y-4">
-          <input
-            type="password"
-            placeholder="Kata sandi baru"
-            value={newPassword}
-            onChange={(e) => setNewPassword(e.target.value)}
-            className="w-full p-3 bg-[#272f6d] text-white placeholder-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-neonGreen focus:shadow-neon transition duration-300"
-          />
-          <div className="flex space-x-3">
-            <button
-              onClick={resetForgotPassword}
-              className="flex-1 p-3 bg-gray-800 border border-gray-700 text-gray-300 font-futuristic font-medium rounded-md hover:bg-gray-700 hover:shadow-neon hover:scale-105 transition duration-300"
-            >
-              Kembali
-            </button>
-            <button
-              onClick={handleResetPassword}
-              disabled={otpLoading}
-              className={`flex-1 p-3 font-futuristic font-medium text-black rounded-md transition duration-300 ${
-                otpLoading
-                  ? "bg-green-700/50 cursor-not-allowed animate-pulse"
-                  : "bg-neonGreen hover:bg-green-600 hover:shadow-neon hover:scale-105"
-              }`}
-            >
-              {otpLoading ? "Menyimpan..." : "Simpan Kata Sandi"}
-            </button>
-          </div>
+        <input
+          type="password"
+          placeholder="Kata sandi baru"
+          value={newPassword}
+          onChange={(e) => setNewPassword(e.target.value)}
+          className="w-full p-3 bg-[#272f6d] text-white rounded-md"
+        />
+        <div className="flex space-x-3 mt-4">
+          <button onClick={resetForgotPassword} className="flex-1 bg-gray-700 p-3 text-white rounded-md">
+            Kembali
+          </button>
+          <button
+            onClick={handleResetPassword}
+            disabled={otpLoading}
+            className="flex-1 bg-green-600 hover:bg-green-700 p-3 text-black font-futuristic rounded-md"
+          >
+            {otpLoading ? "Menyimpan..." : "Simpan Kata Sandi"}
+          </button>
         </div>
       </>
     ) : (
-      // Step 2: OTP Verify
+      // Step 2: Verify OTP
       <>
         <p className="text-gray-300 text-center mb-6 text-sm font-futuristic">
-          Masukan kode OTP untuk <strong>{phoneNumber}</strong>
+          Masukkan kode OTP yang dikirim ke <strong>{emailForReset}</strong>
         </p>
-        <div className="space-y-4">
-          <input
-            type="text"
-            placeholder="6-digit OTP"
-            value={otpCode}
-            onChange={(e) => setOtpCode(e.target.value)}
-            maxLength="6"
-            className="w-full p-3 bg-[#272f6d] text-white placeholder-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-neonGreen focus:shadow-neon transition duration-300 text-center text-lg tracking-widest font-futuristic"
-          />
-          <div className="flex space-x-3">
-            <button
-              onClick={resetForgotPassword}
-              className="flex-1 p-3 bg-gray-800 border border-gray-700 text-gray-300 font-futuristic font-medium rounded-md hover:bg-gray-700 hover:shadow-neon hover:scale-105 transition duration-300"
-            >
-              Kembali
-            </button>
-            <button
-              onClick={handleVerifyOtp}
-              disabled={otpLoading}
-              className={`flex-1 p-3 font-futuristic font-medium text-black rounded-md transition duration-300 ${
-                otpLoading
-                  ? "bg-green-700/50 cursor-not-allowed animate-pulse"
-                  : "bg-neonGreen hover:bg-green-600 hover:shadow-neon hover:scale-105"
-              }`}
-            >
-              {otpLoading ? "Verifying..." : "Verify OTP"}
-            </button>
-          </div>
+        <input
+          type="text"
+          placeholder="6-digit OTP"
+          value={otpCode}
+          onChange={(e) => setOtpCode(e.target.value)}
+          maxLength="6"
+          className="w-full p-3 bg-[#272f6d] text-white rounded-md text-center tracking-widest"
+        />
+        <div className="flex space-x-3 mt-4">
+          <button onClick={resetForgotPassword} className="flex-1 bg-gray-700 p-3 text-white rounded-md">
+            Kembali
+          </button>
+          <button
+            onClick={handleVerifyOtp}
+            disabled={otpLoading}
+            className="flex-1 bg-green-600 hover:bg-green-700 p-3 text-black font-futuristic rounded-md"
+          >
+            {otpLoading ? "Memverifikasi..." : "Verifikasi OTP"}
+          </button>
         </div>
       </>
     )
@@ -227,57 +227,43 @@ function Login() {
     // Step 1: Send OTP
     <>
       <p className="text-gray-300 text-center mb-6 text-sm font-futuristic">
-        Masukan nomor WA yang terdaftar untuk menerima kode OTP
+        Masukkan email akun anda untuk menerima kode OTP
       </p>
-      <div className="space-y-4">
-        <input
-          type="tel"
-          placeholder="Nomor (e.g., +628123456789)"
-          value={phoneNumber}
-          onChange={(e) => setPhoneNumber(e.target.value)}
-          className="w-full p-3 bg-[#272f6d] text-white placeholder-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-neonGreen focus:shadow-neon transition duration-300"
-        />
-        <div className="flex space-x-3">
-          <button
-            onClick={resetForgotPassword}
-            className="cursor-pointer flex-1 p-3 bg-gray-800 text-gray-200 font-futuristic font-medium rounded-md hover:bg-gray-700 hover:shadow-neon hover:scale-105 transition duration-300"
-          >
-            Kembali ke Login
-          </button>
-          <button
-            onClick={handleForgotPassword}
-            disabled={otpLoading}
-            className={`flex-1 p-3 font-futuristic font-medium text-black rounded-md transition duration-300 ${
-              otpLoading
-                ? "bg-green-700/50 cursor-not-allowed animate-pulse"
-                : "cursor-pointer bg-green-700 hover:bg-green-600 hover:shadow-neon hover:scale-105"
-            }`}
-          >
-            {otpLoading ? "Sending..." : "Send OTP"}
-          </button>
-        </div>
+      <input
+        type="email"
+        placeholder="Alamat Email"
+        value={emailForReset}
+        onChange={(e) => setEmailForReset(e.target.value)}
+        className="w-full p-3 bg-[#272f6d] text-white rounded-md"
+      />
+      <div className="flex space-x-3 mt-4">
+        <button onClick={resetForgotPassword} className="flex-1 bg-gray-700 p-3 text-white rounded-md">
+          Kembali ke Login
+        </button>
+        <button
+          onClick={handleSendOtp}
+          disabled={otpLoading}
+          className="flex-1 bg-green-600 hover:bg-green-700 p-3 text-black font-futuristic rounded-md"
+        >
+          {otpLoading ? "Mengirim..." : "Kirim OTP"}
+        </button>
       </div>
     </>
   )
 ) : (
                 <>
                   {/* Normal Login Form */}
-                  <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+                  <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" autocomplete="off">
                     <div>
                       <input
-                        {...register("email", {
-                          required: "Email is required",
-                          pattern: {
-                            value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-                            message: "Invalid email address",
-                          },
+                        {...register("email", {                         
                         })}
                         type="email"
                         placeholder="Email"
                         className={`w-full p-3 bg-[#272f6d] rounded-md focus:outline-none focus:ring-2 text-white placeholder-gray-400 font-futuristic ${
                           errors.email
                             ? "border-neonRed focus:ring-neonRed"
-                            : "border-gray-700 focus:ring-neonGreen focus:shadow-neon"
+                            : "focus:ring-2 focus:ring-green-500 focus:outline-none transition duration-200"
                         } transition duration-300`}
                       />
                       {errors.email && (
@@ -287,21 +273,33 @@ function Login() {
                     <div>
                       <input
                         {...register("password", {
-                          required: "Password is required",
-                          minLength: { value: 6, message: "Password must be at least 6 characters" },
+                          
                         })}
                         type="password"
                         placeholder="Password"
                         className={`w-full p-3 bg-[#272f6d] rounded-md focus:outline-none focus:ring-2 text-white placeholder-gray-400 font-futuristic ${
                           errors.password
                             ? "border-neonRed focus:ring-neonRed"
-                            : "border-gray-700 focus:ring-neonGreen focus:shadow-neon"
+                            : "focus:ring-2 focus:ring-green-500 focus:outline-none transition duration-200"
                         } transition duration-300`}
                       />
                       {errors.password && (
                         <p className="text-neonRed text-sm mt-1 font-futuristic">{errors.password.message}</p>
                       )}
                     </div>
+                    <div className="relative flex items-center my-4">
+  <div className="flex-grow border-t border-gray-700"></div>
+  <span className="mx-2 text-gray-400 text-sm font-futuristic">or</span>
+  <div className="flex-grow border-t border-gray-700"></div>
+</div>
+
+{/* Google Sign-In Button */}
+
+<div className="mt-6 text-center">
+    <div className="google-btn-wrapper">
+      <div id="google-signup-btn" className="w-full inline-block"></div>
+    </div>
+  </div>
                     <button
                       type="submit"
                       disabled={isLoading}
@@ -346,6 +344,9 @@ function Login() {
           </aside>
         </div>
       </main>
+      <footer>
+    <p>&copy; 2025 www.waboss.com. All Rights Reserved.</p>
+</footer>
     </div>
   );
 }

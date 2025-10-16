@@ -84,8 +84,9 @@ body {
 }
 
 h1 {
-  font-size: 3.2em;
+  font-size: 1.2em;
   line-height: 1.1;
+  font-family: "Knewave"
 }
 
 
@@ -170,6 +171,31 @@ h1 {
   background-color: #0f132b;
 }
 
+.google-btn-wrapper {
+  position: relative;
+  z-index: 10;
+  width: 100%;
+  min-height: 52px;
+}
+
+.text-center.text-sm.text-gray-300.mt-3 {
+  position: relative;
+  z-index: 5;
+  margin-top: 1rem;
+}
+
+.text-center.text-sm.text-gray-300.mt-3 {
+  position: relative;
+  z-index: 5;
+  margin-top: 1rem;
+}
+
+footer {
+    text-align: center;
+    padding: 10px;
+    color: #acacac;
+    font-size: 0.8em;
+}
 
 @media (prefers-color-scheme: light) {
   :root {
