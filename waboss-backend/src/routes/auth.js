@@ -831,6 +831,58 @@ router.get("/check-first-link-bonus", async (req, res) => {
   }
 });
 
+// ✅ Get user-linked accounts with live status
+router.get("/get-user-accounts", async (req, res) => {
+  const token = req.headers.authorization?.split(" ")[1];
+  if (!token) return res.status(400).json({ message: "Token is required" });
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+    // Step 1: Fetch user's linked numbers from DB
+    const dbResult = await req.db.query(
+      "SELECT phone FROM whatsapp_accounts WHERE user_id = $1",
+      [decoded.id]
+    );
+    const dbAccounts = dbResult.rows;
+
+    if (dbAccounts.length === 0) {
+      return res.json([]);
+    }
+
+    // Step 2: Get live statuses from Maxyprime
+    const response = await axios.get("https://maxyprime.com/api/get/wa.accounts", {
+      params: {
+        secret: process.env.MAXYPRIME_API_SECRET,
+        limit: 100000,
+        page: 1,
+      },
+    });
+
+    if (response.data.status !== 200 || !Array.isArray(response.data.data)) {
+      return res
+        .status(response.data.status || 500)
+        .json({ message: response.data.message || "Failed to fetch accounts" });
+    }
+
+    const maxyAccounts = response.data.data;
+
+    // Step 3: Merge DB numbers with live statuses
+    const merged = dbAccounts.map((dbAcc) => {
+      const live = maxyAccounts.find((m) => m.phone === dbAcc.phone);
+      return {
+        phone: dbAcc.phone,
+        status: live ? live.status : "unknown",
+      };
+    });
+
+    res.json(merged);
+  } catch (error) {
+    console.error("Get user accounts error:", error.message);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
 // Claim first link bonus
 router.post("/claim-first-link-bonus", async (req, res) => {
   const token = req.headers.authorization?.split(" ")[1];
@@ -972,57 +1024,5 @@ router.get("/get-reward-history", async (req, res) => {
   }
 });
 
-
-// ✅ Get user-linked accounts with live status
-router.get("/get-user-accounts", async (req, res) => {
-  const token = req.headers.authorization?.split(" ")[1];
-  if (!token) return res.status(400).json({ message: "Token is required" });
-
-  try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-
-    // Step 1: Fetch user's linked numbers from DB
-    const dbResult = await req.db.query(
-      "SELECT phone FROM whatsapp_accounts WHERE user_id = $1",
-      [decoded.id]
-    );
-    const dbAccounts = dbResult.rows;
-
-    if (dbAccounts.length === 0) {
-      return res.json([]);
-    }
-
-    // Step 2: Get live statuses from Maxyprime
-    const response = await axios.get("https://maxyprime.com/api/get/wa.accounts", {
-      params: {
-        secret: process.env.MAXYPRIME_API_SECRET,
-        limit: 100000,
-        page: 1,
-      },
-    });
-
-    if (response.data.status !== 200 || !Array.isArray(response.data.data)) {
-      return res
-        .status(response.data.status || 500)
-        .json({ message: response.data.message || "Failed to fetch accounts" });
-    }
-
-    const maxyAccounts = response.data.data;
-
-    // Step 3: Merge DB numbers with live statuses
-    const merged = dbAccounts.map((dbAcc) => {
-      const live = maxyAccounts.find((m) => m.phone === dbAcc.phone);
-      return {
-        phone: dbAcc.phone,
-        status: live ? live.status : "unknown",
-      };
-    });
-
-    res.json(merged);
-  } catch (error) {
-    console.error("Get user accounts error:", error.message);
-    res.status(500).json({ message: "Server error" });
-  }
-});
 
 module.exports = router;

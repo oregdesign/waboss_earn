@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { Eye, EyeOff, CheckCircle, XCircle, Gift } from 'lucide-react';
 import CarouselMobile from '../CarouselMobile';
 import WhatsappListMobile from '../WhatsappListMobile';
+import BonusPointer from '../BonusPointer'; // ✅ Import the new component
 import Lottie from 'lottie-react';
 import bonusAnimation from '../../assets/GiftBox.json';
 
@@ -34,9 +35,11 @@ const MobileLayout = ({
   setShowBonus,
   isBonusModalOpen,
   setIsBonusModalOpen,
-  onClaimBonus, // New prop for claiming bonus
+  onClaimBonus,
 }) => {
+  const shouldShowPointer = linkedNumbers.length === 0 && !showBonus;
   return (
+    
     <div className="md:hidden relative h-full flex flex-col">
       {/* Withdraw Modal */}
       <AnimatePresence>
@@ -177,41 +180,8 @@ const MobileLayout = ({
                 <span className="basis-64 pl-12">Status</span>
               </div>
 
-              <div className="bg-[#161b42] overflow-y-auto scrollbar-thin space-y-2 max-h-[30vh] rounded-lg">
-                {Array.from({ length: 12 }).map((_, i) => (
-                  <div key={i} className="flex flex-row gap-2 text-sm items-center py-2 px-2 rounded-lg border-[#1a2153]">
-                    <span className="text-gray-300 font-mono text-xs basis-32">
-                      <svg id="Layer_1" data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" className="fill-white w-15 h-7 text-green-500 flex-shrink-0" viewBox="0 0 756 228"><title>dana_blue</title><path d="M142.26,16c5.86,1.17,11.8,1.88,17.58,3.51a98.19,98.19,0,0,1-15.77,192,14.45,14.45,0,0,0-1.81.44H124c-2.64-.43-5.28-.83-7.91-1.31-21.94-4-40.6-14.09-55.54-30.65-19.94-22.1-28.31-48.17-25-77.66,2.71-23.9,13.3-44.09,31-60.49a97.22,97.22,0,0,1,39.33-22.22c5.94-1.74,12-2.5,18.1-3.65ZM76.71,114.92c0,8.41.15,16.82-.07,25.23-.09,3.63,1.23,5.76,4.41,7.41,11.15,5.8,22.67,5.75,34.47,2.69,9.28-2.4,18.2-5.91,27.28-8.92a83.2,83.2,0,0,1,20.69-4.4,41.4,41.4,0,0,1,23.43,5.54c2.58,1.44,3.06,1.17,3.06-1.56,0-17.71,0-35.43,0-53.15a6.64,6.64,0,0,0-3.27-6.06,38.72,38.72,0,0,0-19.18-6.15c-9-.38-17.28,2.48-25.56,5.37-9,3.15-17.87,6.89-27,9.62-12.22,3.64-24,3.15-35.1-3.86-2.57-1.63-3.13-1.27-3.14,1.93C76.69,97.38,76.71,106.15,76.71,114.92Z"/></svg>
-                    </span>
-                    <span className="text-gray-400 text-xs basis-64 pl-3">
-                      07-08-25
-                    </span>
-                    <span className="text-green-400 font-consolas font-bold basis-64 pr-6">
-                      {new Intl.NumberFormat("id-ID", {
-                        style: "currency",
-                        currency: "IDR",
-                        minimumFractionDigits: 0,
-                      }).format(50000 + i * 10000)}
-                    </span>
-                    <span className="text-green-400 font-semibold flex items-center justify-start basis-64 gap-2">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="w-4 h-4 text-green-500 flex-shrink-0"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          d="M5 13l4 4L19 7"
-                        />
-                      </svg>
-                      <span>Sukses</span>
-                    </span>
-                  </div>
-                ))}
+              <div className="bg-[#161b42] overflow-y-auto scrollbar-thin space-y-2 py-12 rounded-lg">
+                <h2 className="flex items-center justify-center text-gray-500">No data to display</h2>
               </div>
             </div>
           </motion.div>
@@ -355,6 +325,27 @@ const MobileLayout = ({
           <h2 className="text-xl text-center font-futuristic font-bold text-green-600 mb-1">
             Akun yang tertaut
           </h2>
+          {/* ✅ Show Bonus Pointer if no WhatsApp linked yet */}
+          <button
+                onClick={() => setIsModalOpen(true)}
+                
+              >
+          <AnimatePresence>
+            {shouldShowPointer && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.8 }}
+                className="mb-4"
+              >
+                <BonusPointer
+                  show={shouldShowPointer}
+                  text="Scan dan klaim bonus pertama kamu!"
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
+          </button>
           <WhatsappListMobile linkedNumbers={linkedNumbers} setIsModalOpen={setIsModalOpen} />
         </div>
       </div>

@@ -1,4 +1,4 @@
-// src/pages/Dashboard.jsx - Updated with rewards integration
+// src/pages/Dashboard.jsx - Add pointer logic
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import useAuthStore from "../store/useAuthStore";
@@ -58,6 +58,9 @@ function Dashboard() {
     checkFirstLinkBonus,
     fetchTotalBalance,
   } = useRewards(linkedNumbers);
+
+  // ✅ Show pointer if: no linked numbers AND hasn't claimed bonus
+  const showBonusPointer = linkedNumbers.length === 0 && !bonusEligible;
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -190,6 +193,7 @@ function Dashboard() {
         linkedNumbers={linkedNumbers}
         setIsModalOpen={setIsModalOpen}
         showBonus={showBonus && bonusEligible}
+        showBonusPointer={showBonusPointer} // ✅ Pass to desktop
         bonusBalance={bonusBalance}
         onClaimBonus={handleClaimBonus}
       />
