@@ -785,6 +785,193 @@ router.get("/get-earnings", async (req, res) => {
   }
 });
 
+// Add these routes to waboss-backend/src/routes/auth.js
+
+// Check if user is eligible for first link bonus
+router.get("/check-first-link-bonus", async (req, res) => {
+  const token = req.headers.authorization?.split(" ")[1];
+  if (!token) return res.status(400).json({ message: "Token is required" });
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const userId = decoded.id;
+
+    // Check if user has claimed bonus
+    const { rows: userRows } = await db.query(
+      "SELECT first_link_bonus_claimed, bonus_balance FROM users WHERE id = $1",
+      [userId]
+    );
+
+    if (userRows.length === 0) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const user = userRows[0];
+
+    // Check if user has any linked WhatsApp accounts
+    const { rows: linkedRows } = await db.query(
+      "SELECT COUNT(*) as count FROM linked_whatsapp WHERE user_id = $1",
+      [userId]
+    );
+
+    const hasLinkedAccount = linkedRows[0].count > 0;
+
+    res.json({
+      eligible: !user.first_link_bonus_claimed && hasLinkedAccount,
+      alreadyClaimed: user.first_link_bonus_claimed,
+      hasLinkedAccount,
+      currentBonus: user.bonus_balance || 0
+    });
+  } catch (error) {
+    console.error("Check first link bonus error:", error.message);
+    if (error.name === "JsonWebTokenError") {
+      return res.status(401).json({ message: "Invalid or expired token" });
+    }
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+// Claim first link bonus
+router.post("/claim-first-link-bonus", async (req, res) => {
+  const token = req.headers.authorization?.split(" ")[1];
+  if (!token) return res.status(400).json({ message: "Token is required" });
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const userId = decoded.id;
+
+    // Start transaction
+    await db.query("BEGIN");
+
+    // Check eligibility
+    const { rows: userRows } = await db.query(
+      "SELECT first_link_bonus_claimed, bonus_balance FROM users WHERE id = $1",
+      [userId]
+    );
+
+    if (userRows.length === 0) {
+      await db.query("ROLLBACK");
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const user = userRows[0];
+
+    if (user.first_link_bonus_claimed) {
+      await db.query("ROLLBACK");
+      return res.status(400).json({ message: "Bonus already claimed" });
+    }
+
+    // Check if user has linked WhatsApp
+    const { rows: linkedRows } = await db.query(
+      "SELECT COUNT(*) as count FROM linked_whatsapp WHERE user_id = $1",
+      [userId]
+    );
+
+    if (linkedRows[0].count === 0) {
+      await db.query("ROLLBACK");
+      return res.status(400).json({ message: "No linked WhatsApp account found" });
+    }
+
+    const bonusAmount = 5000; // Rp 5.000
+
+    // Update user balance and mark bonus as claimed
+    await db.query(
+      `UPDATE users 
+       SET first_link_bonus_claimed = TRUE, 
+           bonus_balance = COALESCE(bonus_balance, 0) + $1
+       WHERE id = $2`,
+      [bonusAmount, userId]
+    );
+
+    // Record the reward
+    await db.query(
+      `INSERT INTO user_rewards (user_id, reward_type, amount, description)
+       VALUES ($1, $2, $3, $4)
+       ON CONFLICT (user_id, reward_type) DO NOTHING`,
+      [userId, "first_link", bonusAmount, "Bonus untuk link WhatsApp pertama"]
+    );
+
+    await db.query("COMMIT");
+
+    res.json({
+      success: true,
+      message: "Bonus berhasil diklaim!",
+      amount: bonusAmount,
+      newBalance: (user.bonus_balance || 0) + bonusAmount
+    });
+  } catch (error) {
+    await db.query("ROLLBACK");
+    console.error("Claim first link bonus error:", error.message);
+    if (error.name === "JsonWebTokenError") {
+      return res.status(401).json({ message: "Invalid or expired token" });
+    }
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+// Get user's total balance (earnings + bonus)
+router.get("/get-total-balance", async (req, res) => {
+  const token = req.headers.authorization?.split(" ")[1];
+  if (!token) return res.status(400).json({ message: "Token is required" });
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const userId = decoded.id;
+
+    // Get bonus balance
+    const { rows: userRows } = await db.query(
+      "SELECT bonus_balance FROM users WHERE id = $1",
+      [userId]
+    );
+
+    if (userRows.length === 0) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Get earnings (you'll need to call your existing earnings endpoint)
+    // For now, we'll just return the bonus
+    const bonusBalance = userRows[0].bonus_balance || 0;
+
+    res.json({
+      bonusBalance,
+      totalBalance: bonusBalance // Add earnings here when integrated
+    });
+  } catch (error) {
+    console.error("Get total balance error:", error.message);
+    if (error.name === "JsonWebTokenError") {
+      return res.status(401).json({ message: "Invalid or expired token" });
+    }
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+// Get user's reward history
+router.get("/get-reward-history", async (req, res) => {
+  const token = req.headers.authorization?.split(" ")[1];
+  if (!token) return res.status(400).json({ message: "Token is required" });
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const userId = decoded.id;
+
+    const { rows } = await db.query(
+      `SELECT reward_type, amount, claimed_at, description
+       FROM user_rewards
+       WHERE user_id = $1
+       ORDER BY claimed_at DESC`,
+      [userId]
+    );
+
+    res.json(rows);
+  } catch (error) {
+    console.error("Get reward history error:", error.message);
+    if (error.name === "JsonWebTokenError") {
+      return res.status(401).json({ message: "Invalid or expired token" });
+    }
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
 
 // ✅ Get user-linked accounts with live status
 router.get("/get-user-accounts", async (req, res) => {

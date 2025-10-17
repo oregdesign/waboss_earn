@@ -147,7 +147,7 @@ const resetForgotPassword = () => {
     <div className="w-screen min-h-screen flex flex-col bg-gradient-to-tr from-green-900 to-indigo-800">
       {/* Main Content */}
       <main className="flex flex-grow pt-24 px-4 items-center justify-center">
-        <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+        <div className="max-w-7xl mx-auto grid grid-cols-1 items-start">
           {/* Left: Headline + Form */}
           <section className="space-y-6">           
             <div className="bg-[#191e45] border border-gray-800 shadow-neon rounded-2xl p-8 w-full max-w-md animate-fadeIn">
@@ -253,7 +253,7 @@ const resetForgotPassword = () => {
 ) : (
                 <>
                   {/* Normal Login Form */}
-                  <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" autocomplete="off">
+                  <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" autoComplete="off">
                     <div>
                       <input
                         {...register("email", {                         

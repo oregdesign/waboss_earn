@@ -1,85 +1,161 @@
-// Dashboard.jsx
-import { useState } from 'react';
-import useAuthStore from '../store/useAuthStore';
-import { useWhatsAppLinking } from '../../hooks/useWhatsAppLinking';
-import { useEarnings } from '../../hooks/useEarnings'; // Adjust path as needed
-import DesktopLayout from '../components/dashboard/DesktopLayout';
-import MobileLayout from '../components/dashboard/MobileLayout';
-import LinkWhatsAppModal from '../components/dashboard/LinkWhatsAppModal';
-import { Clock, CheckCircle } from "lucide-react";
+// src/pages/Dashboard.jsx - Updated with rewards integration
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import useAuthStore from "../store/useAuthStore";
+import { useWhatsAppLinking } from "../../hooks/useWhatsAppLinking";
+import { useEarnings } from "../../hooks/useEarnings";
+import { useRewards } from "../../hooks/useRewards";
+import LinkWhatsAppModal from "../components/dashboard/LinkWhatsAppModal";
+import MobileLayout from "../components/dashboard/MobileLayout";
+import DesktopLayout from "../components/dashboard/DesktopLayout";
 
+function Dashboard() {
+  const navigate = useNavigate();
+  const { user, isAuthenticated, logout } = useAuthStore();
+  const [activeTab, setActiveTab] = useState("Dashboard");
+  const [showBalance, setShowBalance] = useState(true);
 
-
-const Dashboard = () => {
-  const { user, logout } = useAuthStore();
-  const linking = useWhatsAppLinking();
-  const { earnings, earningsLoading } = useEarnings(linking.linkedNumbers);
-  const [activeTab, setActiveTab] = useState('Dashboard');
-  const [showBalance, setShowBalance] = useState(false);
+  // Withdraw modal state
   const [isWithdrawModalOpen, setIsWithdrawModalOpen] = useState(false);
-  const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
-  const [withdrawPhone, setWithdrawPhone] = useState('');
-  const [withdrawAmount, setWithdrawAmount] = useState('');
-  const [withdrawAmountDisplay, setWithdrawAmountDisplay] = useState('');
-  const [withdrawSuccess, setWithdrawSuccess] = useState(false);
+  const [withdrawPhone, setWithdrawPhone] = useState("");
+  const [withdrawAmount, setWithdrawAmount] = useState("");
+  const [withdrawAmountDisplay, setWithdrawAmountDisplay] = useState("");
+  const [withdrawSuccess, setWithdrawSuccess] = useState(null);
   const [isSubmittingWithdraw, setIsSubmittingWithdraw] = useState(false);
-  
-  
-  
+
+  // History modal state
+  const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
+
+  // Bonus modal state
+  const [isBonusModalOpen, setIsBonusModalOpen] = useState(false);
+
+  // WhatsApp linking hook
+  const {
+    isModalOpen,
+    setIsModalOpen,
+    qrImage,
+    status,
+    linkedNumbers,
+    linkedNumber,
+    timer,
+    sid,
+    handleGenerateQr,
+    fetchLinkedNumbers,
+  } = useWhatsAppLinking();
+
+  // Earnings hook
+  const { earnings, earningsLoading, fetchEarnings } = useEarnings(linkedNumbers);
+
+  // Rewards hook
+  const {
+    showBonus,
+    setShowBonus,
+    bonusEligible,
+    bonusAmount,
+    totalBalance,
+    bonusBalance,
+    claimFirstLinkBonus,
+    checkFirstLinkBonus,
+    fetchTotalBalance,
+  } = useRewards(linkedNumbers);
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      navigate("/login");
+    }
+  }, [isAuthenticated, navigate]);
+
+  // Check for bonus eligibility when successfully linking WhatsApp
+  useEffect(() => {
+    if (status === "success" && linkedNumber) {
+      setTimeout(() => {
+        checkFirstLinkBonus();
+      }, 2000);
+    }
+  }, [status, linkedNumber]);
 
   const handleLogout = () => {
     logout();
-    window.location.href = '/login';
+    navigate("/login");
   };
 
-  const handleWithdrawSubmit = (e) => {
+  const handleWithdrawSubmit = async (e) => {
     e.preventDefault();
     setIsSubmittingWithdraw(true);
 
-    // Convert amount to number
-    const amountValue = parseInt(withdrawAmount, 10) || 0;
+    const numericAmount = parseInt(withdrawAmount);
+    const userTotalBalance = (earnings.total_earnings || 0) + bonusBalance;
+
+    if (numericAmount < 50000) {
+      setWithdrawSuccess("failed");
+      setIsSubmittingWithdraw(false);
+      setTimeout(() => {
+        setWithdrawSuccess(null);
+        setIsWithdrawModalOpen(false);
+      }, 3000);
+      return;
+    }
+
+    if (numericAmount > userTotalBalance) {
+      setWithdrawSuccess("failed");
+      setIsSubmittingWithdraw(false);
+      setTimeout(() => {
+        setWithdrawSuccess(null);
+        setIsWithdrawModalOpen(false);
+      }, 3000);
+      return;
+    }
 
     setTimeout(() => {
       setIsSubmittingWithdraw(false);
+      setWithdrawSuccess("success");
 
-      if (amountValue < 50000) {
-        // Mock failed withdrawal
-        setWithdrawSuccess('failed');
-      } else {
-        // Mock success withdrawal (optional)
-        setWithdrawSuccess('success');
-      }
-
-      // Auto close after a few seconds
       setTimeout(() => {
-        setWithdrawSuccess(false);
-        setWithdrawPhone('');
-        setWithdrawAmount('');
-        setWithdrawAmountDisplay('');
+        setWithdrawSuccess(null);
+        setWithdrawPhone("");
+        setWithdrawAmount("");
+        setWithdrawAmountDisplay("");
         setIsWithdrawModalOpen(false);
-      }, 2500);
+      }, 2000);
     }, 1500);
   };
 
+  const handleClaimBonus = async () => {
+    const result = await claimFirstLinkBonus();
+    if (result.success) {
+      setIsBonusModalOpen(true);
+      setShowBonus(false);
+      // Refresh earnings and balance
+      await fetchEarnings();
+      await fetchTotalBalance();
+    } else {
+      alert(result.message || "Gagal mengklaim bonus");
+    }
+  };
+
+  if (!user) return null;
+
+  // Calculate total balance including bonus
+  const displayBalance = (earnings.total_earnings || 0) + bonusBalance;
+
   return (
-    <div className="w-screen h-screen p-4 bg-[#272f6d]">
-      <LinkWhatsAppModal {...linking} />
-      <DesktopLayout
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
-        user={user}
-        handleLogout={handleLogout}
-        earnings={earnings}
-        earningsLoading={earningsLoading}
-        linkedNumbers={linking.linkedNumbers}
-        setIsModalOpen={linking.setIsModalOpen}
+    <div className="min-h-screen bg-gradient-to-bl from-green-900 to-indigo-800 p-4 overflow-hidden">
+      <LinkWhatsAppModal
+        isModalOpen={isModalOpen}
+        setIsModalOpen={setIsModalOpen}
+        qrImage={qrImage}
+        status={status}
+        linkedNumber={linkedNumber}
+        timer={timer}
+        handleGenerateQr={handleGenerateQr}
       />
+
       <MobileLayout
         user={user}
         handleLogout={handleLogout}
         showBalance={showBalance}
         setShowBalance={setShowBalance}
-        earnings={earnings}
+        earnings={{ ...earnings, total_earnings: displayBalance }}
         earningsLoading={earningsLoading}
         isWithdrawModalOpen={isWithdrawModalOpen}
         setIsWithdrawModalOpen={setIsWithdrawModalOpen}
@@ -93,22 +169,32 @@ const Dashboard = () => {
         setWithdrawSuccess={setWithdrawSuccess}
         isSubmittingWithdraw={isSubmittingWithdraw}
         handleWithdrawSubmit={handleWithdrawSubmit}
-        linkedNumbers={linking.linkedNumbers}
-        setIsModalOpen={linking.setIsModalOpen}
+        linkedNumbers={linkedNumbers}
+        setIsModalOpen={setIsModalOpen}
         isHistoryModalOpen={isHistoryModalOpen}
         setIsHistoryModalOpen={setIsHistoryModalOpen}
+        showBonus={showBonus && bonusEligible}
+        setShowBonus={setShowBonus}
+        isBonusModalOpen={isBonusModalOpen}
+        setIsBonusModalOpen={setIsBonusModalOpen}
+        onClaimBonus={handleClaimBonus}
       />
-      <LinkWhatsAppModal
-  isModalOpen={linking.isModalOpen}
-  setIsModalOpen={linking.setIsModalOpen}
-  qrImage={linking.qrImage}
-  status={linking.status}
-  linkedNumber={linking.linkedNumber}
-  timer={linking.timer}
-  handleGenerateQr={linking.handleGenerateQr}
-/>
+
+      <DesktopLayout
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        user={user}
+        handleLogout={handleLogout}
+        earnings={{ ...earnings, total_earnings: displayBalance }}
+        earningsLoading={earningsLoading}
+        linkedNumbers={linkedNumbers}
+        setIsModalOpen={setIsModalOpen}
+        showBonus={showBonus && bonusEligible}
+        bonusBalance={bonusBalance}
+        onClaimBonus={handleClaimBonus}
+      />
     </div>
   );
-};
+}
 
 export default Dashboard;

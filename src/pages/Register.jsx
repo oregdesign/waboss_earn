@@ -34,7 +34,7 @@ function Register() {
     /* global google */
     if (window.google) {
       google.accounts.id.initialize({
-        client_id: GOOGLE_CLIENT_ID,
+        client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
         callback: handleGoogleResponse,
       });
 
@@ -95,7 +95,7 @@ function Register() {
           )}
 
           {formStatus === "idle" && (
-  <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" autocomplete="off">
+  <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" autoComplete="off">
     {apiError && (
       <div className="bg-red-900/50 text-neonRed p-3 rounded-md mb-4 text-sm font-futuristic animate-fadeIn">
         {apiError}
