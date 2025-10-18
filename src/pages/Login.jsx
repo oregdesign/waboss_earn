@@ -36,7 +36,6 @@ function Login() {
       google.accounts.id.initialize({
         client_id: GOOGLE_CLIENT_ID,
         callback: handleGoogleResponse,
-        auto_select: false,
       });
 
       google.accounts.id.renderButton(
@@ -44,8 +43,7 @@ function Login() {
         { 
           theme: "outline", 
           size: "large", 
-          text: "signin_with",
-          width: 290,
+          text: "signin_with"
         }
       );
     }
@@ -299,7 +297,7 @@ const resetForgotPassword = () => {
 
 <div className="mt-6 text-center">
     <div className="google-btn-wrapper">
-      <div id="google-signup-btn"></div>
+      <div id="google-signup-btn" className="w-full inline-block"></div>
     </div>
   </div>
                     <button

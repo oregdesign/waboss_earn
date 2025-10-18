@@ -8,10 +8,25 @@ const nodemailer = require('nodemailer');
 const crypto = require('crypto');
 const { OAuth2Client } = require("google-auth-library");
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+const cors = require("cors");
+const app = express();
 require('dotenv').config();
 
 const otpStore = new Map();
 const router = express.Router();
+
+app.use(cors({
+  origin: ["http://localhost:5173", "https://waboss.maxyprime.com"],
+  methods: ["GET", "POST"],
+  credentials: true,
+}));
+
+app.use((req, res, next) => {
+  res.setHeader("Cross-Origin-Opener-Policy", "same-origin-allow-popups");
+  res.setHeader("Cross-Origin-Embedder-Policy", "credentialless");
+  res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
+  next();
+});
 
 
 router.post("/register", async (req, res) => {
@@ -80,6 +95,8 @@ router.post("/auth/google", async (req, res) => {
       process.env.JWT_SECRET,
       { expiresIn: "2h" }
     );
+
+    app.listen(5000, () => console.log("Backend running on port 5000"));
 
     res.json({ token: jwtToken, user });
   } catch (error) {

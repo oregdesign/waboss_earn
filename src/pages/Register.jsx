@@ -34,9 +34,8 @@ function Register() {
     /* global google */
     if (window.google) {
       google.accounts.id.initialize({
-        client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
+        client_id: GOOGLE_CLIENT_ID,
         callback: handleGoogleResponse,
-        auto_select: false,
       });
 
       google.accounts.id.renderButton(
@@ -44,8 +43,7 @@ function Register() {
         { 
           theme: "outline", 
           size: "large", 
-          text: "signup_with",
-          width: 280,
+          text: "signup_with"
         }
       );
     }
@@ -139,7 +137,7 @@ function Register() {
 {/* Google Sign In Button */}
 <div className="mt-6 text-center">
     <div className="google-btn-wrapper">
-      <div id="google-signup-btn"></div>
+      <div id="google-signup-btn" className="w-full inline-block"></div>
     </div>
   </div>
 
