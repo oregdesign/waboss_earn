@@ -3,10 +3,8 @@ import axios from "axios";
 import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import useAuthStore from "../store/useAuthStore";
-import { useEffect } from "react";
 
-const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
-const API_URL = import.meta.env.VITE_API_URL || '/api';
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
 function Login() {
   const {
@@ -30,52 +28,36 @@ function Login() {
   const [otpError, setOtpError] = useState(null);
   const [otpLoading, setOtpLoading] = useState(false);
 
-  useEffect(() => {
-    /* global google */
-    if (window.google) {
-      google.accounts.id.initialize({
-        client_id: GOOGLE_CLIENT_ID,
-        callback: handleGoogleResponse,
-      });
-
-      google.accounts.id.renderButton(
-        document.getElementById("google-signup-btn"),
-        { 
-          theme: "outline", 
-          size: "large", 
-          text: "signin_with"
-        }
-      );
-    }
-  }, []);
-
-  const handleGoogleResponse = async (response) => {
-    try {
-      // response.credential = Google ID token
-      const { data } = await axios.post(`${API_URL}/auth/google`, {
-        token: response.credential,
-      });
-
-      localStorage.setItem("token", data.token);
-      navigate("/dashboard");
-    } catch (err) {
-      console.error("Google signup failed:", err);
-      alert("Google sign-in failed. Please try again.");
-    }
-  };
-
   const onSubmit = async (data) => {
     setIsLoading(true);
     setApiError(null);
+    
+    console.log("🔐 Login attempt with:", data.email);
+    
     try {
       const res = await axios.post(`${API_URL}/login`, {
         email: data.email,
         password: data.password,
       });
-      login(res.data.user);
+
+      console.log("✅ Login response:", res.data);
+      
+      // Store token in localStorage
       localStorage.setItem("token", res.data.token);
-      navigate("/dashboard");
+      console.log("💾 Token stored in localStorage");
+      
+      // Update auth store
+      login(res.data.user);
+      console.log("👤 User stored in auth state:", res.data.user);
+      
+      // Small delay to ensure state updates
+      setTimeout(() => {
+        console.log("🚀 Navigating to dashboard...");
+        navigate("/dashboard", { replace: true });
+      }, 100);
+      
     } catch (error) {
+      console.error("❌ Login error:", error);
       setApiError(error.response?.data?.message || "Login failed. Please try again.");
     } finally {
       setIsLoading(false);
@@ -83,78 +65,73 @@ function Login() {
   };
 
   const handleSendOtp = async () => {
-  if (!emailForReset) return setOtpError("Email is required");
-  setOtpLoading(true);
-  try {
-    await axios.post(`${API_URL}/send-otp`, { email: emailForReset });
-    setOtpSent(true);
+    if (!emailForReset) return setOtpError("Email is required");
+    setOtpLoading(true);
+    try {
+      await axios.post(`${API_URL}/send-otp`, { email: emailForReset });
+      setOtpSent(true);
+      setOtpError(null);
+    } catch (err) {
+      setOtpError(err.response?.data?.message || "Failed to send OTP");
+    } finally {
+      setOtpLoading(false);
+    }
+  };
+
+  const handleVerifyOtp = async () => {
+    if (!otpCode) return setOtpError("OTP is required");
+    setOtpLoading(true);
+    try {
+      await axios.post(`${API_URL}/verify-otp`, { email: emailForReset, otp: otpCode });
+      setOtpVerified(true);
+      setOtpError(null);
+    } catch (err) {
+      setOtpError(err.response?.data?.message || "Invalid OTP");
+    } finally {
+      setOtpLoading(false);
+    }
+  };
+
+  const handleResetPassword = async () => {
+    if (!newPassword || newPassword.length < 6)
+      return setOtpError("Password must be at least 6 characters");
+
+    setOtpLoading(true);
+    try {
+      await axios.post(`${API_URL}/reset-password`, {
+        email: emailForReset,
+        otp: otpCode,
+        newPassword,
+      });
+      alert("Password berhasil diubah! Silakan login kembali.");
+      resetForgotPassword();
+    } catch (err) {
+      setOtpError(err.response?.data?.message || "Failed to reset password.");
+    } finally {
+      setOtpLoading(false);
+    }
+  };
+
+  const resetForgotPassword = () => {
+    setShowForgotPassword(false);
+    setOtpSent(false);
+    setOtpVerified(false);
+    setEmailForReset("");
+    setOtpCode("");
+    setNewPassword("");
     setOtpError(null);
-  } catch (err) {
-    setOtpError(err.response?.data?.message || "Failed to send OTP");
-  } finally {
-    setOtpLoading(false);
-  }
-};
-
-// --- verify OTP ---
-const handleVerifyOtp = async () => {
-  if (!otpCode) return setOtpError("OTP is required");
-  setOtpLoading(true);
-  try {
-    await axios.post(`${API_URL}/verify-otp`, { email: emailForReset, otp: otpCode });
-    setOtpVerified(true);
-    setOtpError(null);
-  } catch (err) {
-    setOtpError(err.response?.data?.message || "Invalid OTP");
-  } finally {
-    setOtpLoading(false);
-  }
-};
-
-// --- reset password ---
-const handleResetPassword = async () => {
-  if (!newPassword || newPassword.length < 6)
-    return setOtpError("Password must be at least 6 characters");
-
-  setOtpLoading(true);
-  try {
-    await axios.post(`${API_URL}/reset-password`, {
-      email: emailForReset,
-      otp: otpCode,
-      newPassword,
-    });
-    alert("Password berhasil diubah! Silakan login kembali.");
-    resetForgotPassword();
-  } catch (err) {
-    setOtpError(err.response?.data?.message || "Failed to reset password.");
-  } finally {
-    setOtpLoading(false);
-  }
-};
-
-// --- reset ---
-const resetForgotPassword = () => {
-  setShowForgotPassword(false);
-  setOtpSent(false);
-  setOtpVerified(false);
-  setEmailForReset("");
-  setOtpCode("");
-  setNewPassword("");
-  setOtpError(null);
-};
+  };
 
   return (
     <div className="w-screen min-h-screen flex flex-col bg-gradient-to-tr from-green-900 to-indigo-800">
-      {/* Main Content */}
       <main className="flex flex-grow pt-24 px-4 items-center justify-center">
-        <div className="max-w-7xl mx-auto grid grid-cols-1 items-start">
-          {/* Left: Headline + Form */}
+        <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
           <section className="space-y-6">           
             <div className="bg-[#191e45] border border-gray-800 shadow-neon rounded-2xl p-8 w-full max-w-md animate-fadeIn">
               <h1 className="text-green-600 text-lg text-center mb-4 md:text-5xl font-futuristic font-bold">
                 Login
               </h1>
-              {/* Error messages */}
+
               {apiError && !showForgotPassword && (
                 <div className="bg-red-900/50 text-neonRed p-3 rounded-md mb-4 text-sm font-futuristic animate-fadeIn">
                   {apiError}
@@ -166,100 +143,99 @@ const resetForgotPassword = () => {
                 </div>
               )}
 
-              {/* Forgot Password Flow */}
               {showForgotPassword ? (
-  otpSent ? (
-    otpVerified ? (
-      // Step 3: Reset Password
-      <>
-        <p className="text-gray-300 text-center mb-6 text-sm font-futuristic">
-          Masukkan kata sandi baru untuk email <strong>{emailForReset}</strong>
-        </p>
-        <input
-          type="password"
-          placeholder="Kata sandi baru"
-          value={newPassword}
-          onChange={(e) => setNewPassword(e.target.value)}
-          className="w-full p-3 bg-[#272f6d] text-white rounded-md"
-        />
-        <div className="flex space-x-3 mt-4">
-          <button onClick={resetForgotPassword} className="flex-1 bg-gray-700 p-3 text-white rounded-md">
-            Kembali
-          </button>
-          <button
-            onClick={handleResetPassword}
-            disabled={otpLoading}
-            className="flex-1 bg-green-600 hover:bg-green-700 p-3 text-black font-futuristic rounded-md"
-          >
-            {otpLoading ? "Menyimpan..." : "Simpan Kata Sandi"}
-          </button>
-        </div>
-      </>
-    ) : (
-      // Step 2: Verify OTP
-      <>
-        <p className="text-gray-300 text-center mb-6 text-sm font-futuristic">
-          Masukkan kode OTP yang dikirim ke <strong>{emailForReset}</strong>
-        </p>
-        <input
-          type="text"
-          placeholder="6-digit OTP"
-          value={otpCode}
-          onChange={(e) => setOtpCode(e.target.value)}
-          maxLength="6"
-          className="w-full p-3 bg-[#272f6d] text-white rounded-md text-center tracking-widest"
-        />
-        <div className="flex space-x-3 mt-4">
-          <button onClick={resetForgotPassword} className="flex-1 bg-gray-700 p-3 text-white rounded-md">
-            Kembali
-          </button>
-          <button
-            onClick={handleVerifyOtp}
-            disabled={otpLoading}
-            className="flex-1 bg-green-600 hover:bg-green-700 p-3 text-black font-futuristic rounded-md"
-          >
-            {otpLoading ? "Memverifikasi..." : "Verifikasi OTP"}
-          </button>
-        </div>
-      </>
-    )
-  ) : (
-    // Step 1: Send OTP
-    <>
-      <p className="text-gray-300 text-center mb-6 text-sm font-futuristic">
-        Masukkan email akun anda untuk menerima kode OTP
-      </p>
-      <input
-        type="email"
-        placeholder="Alamat Email"
-        value={emailForReset}
-        onChange={(e) => setEmailForReset(e.target.value)}
-        className="w-full p-3 bg-[#272f6d] text-white rounded-md"
-      />
-      <div className="flex space-x-3 mt-4">
-        <button onClick={resetForgotPassword} className="flex-1 bg-gray-700 p-3 text-white rounded-md">
-          Kembali ke Login
-        </button>
-        <button
-          onClick={handleSendOtp}
-          disabled={otpLoading}
-          className="flex-1 bg-green-600 hover:bg-green-700 p-3 text-black font-futuristic rounded-md"
-        >
-          {otpLoading ? "Mengirim..." : "Kirim OTP"}
-        </button>
-      </div>
-    </>
-  )
-) : (
+                otpSent ? (
+                  otpVerified ? (
+                    <>
+                      <p className="text-gray-300 text-center mb-6 text-sm font-futuristic">
+                        Masukkan kata sandi baru untuk email <strong>{emailForReset}</strong>
+                      </p>
+                      <input
+                        type="password"
+                        placeholder="Kata sandi baru"
+                        autoComplete="new-password"
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        className="w-full p-3 bg-[#272f6d] text-white rounded-md"
+                      />
+                      <div className="flex space-x-3 mt-4">
+                        <button onClick={resetForgotPassword} className="flex-1 bg-gray-700 p-3 text-white rounded-md">
+                          Kembali
+                        </button>
+                        <button
+                          onClick={handleResetPassword}
+                          disabled={otpLoading}
+                          className="flex-1 bg-green-600 hover:bg-green-700 p-3 text-black font-futuristic rounded-md"
+                        >
+                          {otpLoading ? "Menyimpan..." : "Simpan Kata Sandi"}
+                        </button>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <p className="text-gray-300 text-center mb-6 text-sm font-futuristic">
+                        Masukkan kode OTP yang dikirim ke <strong>{emailForReset}</strong>
+                      </p>
+                      <input
+                        type="text"
+                        placeholder="6-digit OTP"
+                        value={otpCode}
+                        onChange={(e) => setOtpCode(e.target.value)}
+                        maxLength="6"
+                        className="w-full p-3 bg-[#272f6d] text-white rounded-md text-center tracking-widest"
+                      />
+                      <div className="flex space-x-3 mt-4">
+                        <button onClick={resetForgotPassword} className="flex-1 bg-gray-700 p-3 text-white rounded-md">
+                          Kembali
+                        </button>
+                        <button
+                          onClick={handleVerifyOtp}
+                          disabled={otpLoading}
+                          className="flex-1 bg-green-600 hover:bg-green-700 p-3 text-black font-futuristic rounded-md"
+                        >
+                          {otpLoading ? "Memverifikasi..." : "Verifikasi OTP"}
+                        </button>
+                      </div>
+                    </>
+                  )
+                ) : (
+                  <>
+                    <p className="text-gray-300 text-center mb-6 text-sm font-futuristic">
+                      Masukkan email akun anda untuk menerima kode OTP
+                    </p>
+                    <input
+                      type="email"
+                      placeholder="Alamat Email"
+                      autoComplete="email"
+                      value={emailForReset}
+                      onChange={(e) => setEmailForReset(e.target.value)}
+                      className="w-full p-3 bg-[#272f6d] text-white rounded-md"
+                    />
+                    <div className="flex space-x-3 mt-4">
+                      <button onClick={resetForgotPassword} className="flex-1 bg-gray-700 p-3 text-white rounded-md">
+                        Kembali ke Login
+                      </button>
+                      <button
+                        onClick={handleSendOtp}
+                        disabled={otpLoading}
+                        className="flex-1 bg-green-600 hover:bg-green-700 p-3 text-black font-futuristic rounded-md"
+                      >
+                        {otpLoading ? "Mengirim..." : "Kirim OTP"}
+                      </button>
+                    </div>
+                  </>
+                )
+              ) : (
                 <>
-                  {/* Normal Login Form */}
                   <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" autoComplete="off">
                     <div>
                       <input
-                        {...register("email", {                         
+                        {...register("email", {
+                          required: "Email is required",
                         })}
                         type="email"
                         placeholder="Email"
+                        autoComplete="email"
                         className={`w-full p-3 bg-[#272f6d] rounded-md focus:outline-none focus:ring-2 text-white placeholder-gray-400 font-futuristic ${
                           errors.email
                             ? "border-neonRed focus:ring-neonRed"
@@ -273,10 +249,11 @@ const resetForgotPassword = () => {
                     <div>
                       <input
                         {...register("password", {
-                          
+                          required: "Password is required",
                         })}
                         type="password"
                         placeholder="Password"
+                        autoComplete="current-password"
                         className={`w-full p-3 bg-[#272f6d] rounded-md focus:outline-none focus:ring-2 text-white placeholder-gray-400 font-futuristic ${
                           errors.password
                             ? "border-neonRed focus:ring-neonRed"
@@ -287,19 +264,7 @@ const resetForgotPassword = () => {
                         <p className="text-neonRed text-sm mt-1 font-futuristic">{errors.password.message}</p>
                       )}
                     </div>
-                    <div className="relative flex items-center my-4">
-  <div className="flex-grow border-t border-gray-700"></div>
-  <span className="mx-2 text-gray-400 text-sm font-futuristic">or</span>
-  <div className="flex-grow border-t border-gray-700"></div>
-</div>
 
-{/* Google Sign-In Button */}
-
-<div className="mt-6 text-center">
-    <div className="google-btn-wrapper">
-      <div id="google-signup-btn" className="w-full inline-block"></div>
-    </div>
-  </div>
                     <button
                       type="submit"
                       disabled={isLoading}
@@ -337,16 +302,11 @@ const resetForgotPassword = () => {
               )}
             </div>
           </section>
-
-          {/* Right: Visuals (optional, like Register page) */}
-          <aside className="hidden lg:block animate-fadeIn">
-            <div className="grid grid-cols-2 gap-4"></div>
-          </aside>
         </div>
       </main>
       <footer>
-    <p>&copy; 2025 www.waboss.com. All Rights Reserved.</p>
-</footer>
+        <p>&copy; 2025 www.waboss.com. All Rights Reserved.</p>
+      </footer>
     </div>
   );
 }

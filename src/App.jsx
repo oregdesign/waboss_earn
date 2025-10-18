@@ -2,10 +2,13 @@ import { Routes, Route } from "react-router-dom";
 import Register from "./pages/Register";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
+import { Navigate } from "react-router-dom";
+import useAuthStore from "./store/useAuthStore";
+
 
 function ProtectedRoute({ element }) {
-  const token = localStorage.getItem("authToken");
-  return token ? element : <Login />;
+  const { isAuthenticated } = useAuthStore();
+  return isAuthenticated ? element : <Navigate to="/login" replace />;
 }
 
 function App() {

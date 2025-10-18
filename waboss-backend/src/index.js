@@ -11,6 +11,7 @@ app.use(cors({
   origin: [
     'http://localhost:5173',  // Local development
     'https://waboss.maxyprime.com',
+    'http://localhost:3000'
   ],
   credentials: true
 }));

@@ -6,8 +6,6 @@ const { pool: db } = require('../db/database');
 const url = require('url');
 const nodemailer = require('nodemailer');
 const crypto = require('crypto');
-const { OAuth2Client } = require("google-auth-library");
-const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 const cors = require("cors");
 const app = express();
 require('dotenv').config();
@@ -57,51 +55,6 @@ router.post("/register", async (req, res) => {
   } catch (error) {
     console.error("Register server error:", error.message);
     res.status(500).json({ message: "Terjadi kesalahan pada server." });
-  }
-});
-
-router.post("/auth/google", async (req, res) => {
-  const { token } = req.body;
-
-  try {
-    // Verify Google token
-    const ticket = await client.verifyIdToken({
-      idToken: token,
-      audience: process.env.GOOGLE_CLIENT_ID,
-    });
-
-    const payload = ticket.getPayload();
-    const { email, name } = payload;
-
-    // Check if user exists
-    const { rows } = await db.query("SELECT * FROM users WHERE email = $1", [email]);
-    let user = rows[0];
-
-    // If not, create a new one automatically
-    if (!user) {
-      const randomPassword = Math.random().toString(36).slice(-8);
-      const hashedPassword = await bcryptjs.hash(randomPassword, 10);
-
-      const insert = await db.query(
-        "INSERT INTO users (username, email, password) VALUES ($1, $2, $3) RETURNING *",
-        [name || email.split("@")[0], email, hashedPassword]
-      );
-      user = insert.rows[0];
-    }
-
-    // Create JWT for session
-    const jwtToken = jwt.sign(
-      { id: user.id, email: user.email },
-      process.env.JWT_SECRET,
-      { expiresIn: "2h" }
-    );
-
-    app.listen(5000, () => console.log("Backend running on port 5000"));
-
-    res.json({ token: jwtToken, user });
-  } catch (error) {
-    console.error("Google auth error:", error);
-    res.status(401).json({ message: "Google authentication failed" });
   }
 });
 

@@ -111,8 +111,8 @@ const MobileLayout = ({
         </div>
 
         {/* Buttons Utility */}
-        <div className="bg-[#272f6d] rounded-xl">
-          <div className="grid grid-cols-3 bg-[#272f6d] px-4 py-1 rounded-xl items-center justify-items-center">
+        <div className="rounded-xl">
+          <div className="grid grid-cols-3 px-4 py-1 rounded-xl items-center justify-items-center">
             <div>
               <button
                 onClick={() => setIsModalOpen(true)}
@@ -135,7 +135,7 @@ const MobileLayout = ({
             <div className="text-[#009934] text-center text-sm/4 mx-4">Tarik Penghasilan</div>
             <div className="text-[#009934] text-center text-sm/4 mx-4">Riwayat Penarikan</div>
           </div>
-          <div className="grid grid-cols-3 bg-[#272f6d] px-4 py-1 rounded-xl items-center justify-items-center">
+          <div className="grid grid-cols-3 px-4 py-1 rounded-xl items-center justify-items-center">
             <div>
               <button className="mt-3 cursor-pointer rounded-ml w-[80px] h-[80px] bg-[url('../src/assets/policy.svg')] hover:bg-[url('../src/assets/policyhov.svg')] hover:bg-[#009934] hover:shadow-[0_0_2px_#00b93e,inset_0_0_2px_#00b93e,0_0_5px_#32d96a,0_0_15px_#32d96a,0_0_15px_#32d96a] hover:text-[#fafafa] transition duration-300"></button>
             </div>
