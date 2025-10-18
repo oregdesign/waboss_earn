@@ -27,36 +27,46 @@ app.use((req, res, next) => {
 });
 
 
-router.post("/register", async (req, res) => {
+router.post('/register', async (req, res) => {
   const { email, password } = req.body;
 
   if (!email || !password)
-    return res.status(400).json({ message: "Email and password are required" });
+    return res.status(400).json({ message: 'Email and password required' });
 
   try {
-    // Auto-generate username from email
-    const username = email.split("@")[0];
-
-    // Check for existing user
-    const { rows } = await db.query("SELECT * FROM users WHERE email = $1", [email]);
-    if (rows.length > 0)
-      return res.status(400).json({ message: "Email sudah terdaftar." });
-
-    // Hash password
     const hashedPassword = await bcryptjs.hash(password, 10);
+    const { rows } = await db.query(
+      'INSERT INTO users (email, password, username, role) VALUES ($1, $2, $3, $4) RETURNING *',
+      [email, hashedPassword, email.split("@")[0], 'user']
+    );
+    const newUser = rows[0];
 
-    // Insert into users
-    await db.query(
-      "INSERT INTO users (username, email, password) VALUES ($1, $2, $3)",
-      [username, email, hashedPassword]
+    // Generate JWT
+    const token = jwt.sign(
+      { id: newUser.id, username: newUser.username, role: newUser.role },
+      process.env.JWT_SECRET,
+      { expiresIn: '1h' }
     );
 
-    res.status(201).json({ message: "Pendaftaran berhasil." });
-  } catch (error) {
-    console.error("Register server error:", error.message);
-    res.status(500).json({ message: "Terjadi kesalahan pada server." });
+    res.json({
+      token,
+      user: {
+        id: newUser.id,
+        username: newUser.username,
+        email: newUser.email,
+        role: newUser.role,
+      },
+    });
+  } catch (err) {
+    if (err.code === '23505') {
+      // PostgreSQL unique violation
+      return res.status(400).json({ message: 'Email already registered' });
+    }
+    console.error('Registration error:', err.message);
+    res.status(500).json({ message: 'Server error' });
   }
 });
+
 
 router.post('/login', async (req, res) => {
   const { email, password } = req.body;

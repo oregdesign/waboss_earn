@@ -2,45 +2,68 @@ import { useForm } from "react-hook-form";
 import axios from "axios";
 import { useNavigate, Link } from "react-router-dom";
 import { useState } from "react";
+import useAuthStore from "../store/useAuthStore"; // ✅ import here
+import LoadingScreen from "../components/common/LoadingScreen";
+
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
 function Register() {
   const { register, handleSubmit, formState: { errors } } = useForm({ mode: "onBlur" });
   const navigate = useNavigate();
+  const { login } = useAuthStore(); // ✅ moved INSIDE component
   const [apiError, setApiError] = useState(null);
   const [formStatus, setFormStatus] = useState("idle");
 
-  const onSubmit = async (data) => {
-    setFormStatus("loading");
-    setApiError(null);
-    try {
-      await axios.post(`${API_URL}/register`, {
-        email: data.email,
-        password: data.password,
-      });
-      setFormStatus("success");
-      setTimeout(() => navigate("/login"), 2000);
-    } catch (error) {
-      setApiError(error.response?.data?.message || "Registration failed. Please try again.");
-      setFormStatus("error");
-      setTimeout(() => setFormStatus("idle"), 3000);
-    }
-  };
+const onSubmit = async (data) => {
+  setFormStatus("loading");
+  setApiError(null);
+
+  const startTime = Date.now(); // mark start time
+
+  try {
+    const res = await axios.post(`${API_URL}/register`, {
+      email: data.email,
+      password: data.password,
+    });
+
+    const { token, user } = res.data;
+
+    // Save user info
+    localStorage.setItem("token", token);
+    localStorage.setItem("user", JSON.stringify(user));
+    login(user);
+
+    // ✅ Ensure at least 3 seconds of loading screen
+    const elapsed = Date.now() - startTime;
+    const remaining = 3000 - elapsed;
+    if (remaining > 0) await new Promise((r) => setTimeout(r, remaining));
+
+    // Now show success
+    setFormStatus("success");
+
+    setTimeout(() => navigate("/dashboard", { replace: true }), 1000);
+  } catch (error) {
+    setApiError(error.response?.data?.message || "Registration failed. Please try again.");
+    setFormStatus("error");
+    setTimeout(() => setFormStatus("idle"), 2500);
+  }
+};
+
 
   return (
-    <div className="w-screen min-h-screen flex flex-col bg-gradient-to-bl from-green-900 to-indigo-800 p-6">
-      <main className="flex-grow flex items-center justify-center">
-        <div className="bg-[#191e45] rounded-2xl p-8 w-full max-w-md">
-          <h1 className="text-green-600 text-lg text-center mb-4">Daftar Disini!</h1>
-
-          {formStatus === "loading" && (
-            <div className="flex flex-col items-center h-64 justify-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-neonGreen"></div>
-              <p className="mt-4 text-white">Registering...</p>
-            </div>
-          )}
-
+    <div className="w-screen min-h-screen flex flex-col bg-gradient-to-bl from-green-900 to-indigo-800">
+      <div className="h-5 flex-grow flex items-center justify-center">
+      <img width="120" height="20" src="/src/assets/wb_logo_white.svg" alt="Waboss"/>
+      </div>
+      <div className="h-1 flex-grow flex items-center justify-center">
+      <p className="text-center text-gray-300 w-85 md:w-1/3 sm:w-1/2 ">monetasi nomor whatsapp anda untuk keperluan berbagai jenis industri bisnis, dan dapatkan 
+      <span className="text-amber-500 font-extrabold"> bayaran </span> untuk setiap pesan dan tugas yang di selesaikan</p>
+</div>
+      <main className="flex-grow flex items-center justify-center p-6 pb-12">            
+            <div className="bg-[#191e45] rounded-2xl p-8 w-full max-w-md">
+              <h1 className="text-green-600 text-lg text-center mb-4">Daftar Disini!</h1>
+{formStatus === "loading" && <LoadingScreen />}
           {formStatus === "success" && (
             <div className="flex flex-col items-center justify-center h-64 text-neonGreen">
               <span className="text-6xl animate-bounce">✅</span>
@@ -60,7 +83,7 @@ function Register() {
           {formStatus === "idle" && (
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" autoComplete="off">
               {apiError && (
-                <div className="bg-red-900/50 text-neonRed p-3 rounded-md mb-4 text-sm font-futuristic animate-fadeIn">
+                <div className="bg-red-400 border-2 border-red-900 font-mono p-3 rounded-md mb-4 text-sm animate-fadeIn text-gray-800">
                   {apiError}
                 </div>
               )}
@@ -68,13 +91,8 @@ function Register() {
               <input
                 type="email"
                 placeholder="Email"
-                autoComplete="email"
+                autoComplete="off"
                 {...register("email", {
-                  required: "Email is required",
-                  pattern: {
-                    value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                    message: "Invalid email address"
-                  }
                 })}
                 className="w-full p-3 bg-[#272f6d] text-white placeholder-gray-400 rounded-md focus:ring-2 focus:ring-green-500 focus:outline-none transition duration-200"
               />
@@ -82,13 +100,11 @@ function Register() {
 
               <input
                 type="password"
-                placeholder="Kata Sandi"
+                placeholder="Password"
                 autoComplete="new-password"
                 {...register("password", {
-                  required: "Password is required",
                   minLength: {
                     value: 6,
-                    message: "Password must be at least 6 characters"
                   }
                 })}
                 className="w-full p-3 bg-[#272f6d] text-white placeholder-gray-400 rounded-md focus:ring-2 focus:ring-green-500 focus:outline-none transition duration-200"
@@ -115,8 +131,14 @@ function Register() {
               </p>
             </form>
           )}
+         
         </div>
+         
       </main>
+      <div className="h-24 lg:h-64 items-center justify-items-center pt-6">
+        <p className="text-xs text-gray-400 font-mono pb-3">sponsored by :</p>
+        <img width="120" height="20" src="/src/assets/bablast_logo_white.svg" alt="Bablast"/>
+      </div>
       <footer>
         <p>&copy; 2025 www.waboss.com. All Rights Reserved.</p>
       </footer>

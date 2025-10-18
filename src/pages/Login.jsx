@@ -124,21 +124,21 @@ function Login() {
 
   return (
     <div className="w-screen min-h-screen flex flex-col bg-gradient-to-tr from-green-900 to-indigo-800">
-      <main className="flex flex-grow pt-24 px-4 items-center justify-center">
-        <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+      <main className="flex-grow flex items-center justify-center">
+        <div className="rounded-2xl p-8 w-full max-w-md">
           <section className="space-y-6">           
             <div className="bg-[#191e45] border border-gray-800 shadow-neon rounded-2xl p-8 w-full max-w-md animate-fadeIn">
-              <h1 className="text-green-600 text-lg text-center mb-4 md:text-5xl font-futuristic font-bold">
+              <h1 className="text-green-600 text-lg text-center mb-6 md:text-5xl font-futuristic font-bold">
                 Login
               </h1>
 
               {apiError && !showForgotPassword && (
-                <div className="bg-red-900/50 text-neonRed p-3 rounded-md mb-4 text-sm font-futuristic animate-fadeIn">
+                <div className="bg-red-400 border-2 border-red-900 font-mono p-3 rounded-md mb-4 text-sm animate-fadeIn text-gray-800">
                   {apiError}
                 </div>
               )}
               {otpError && showForgotPassword && (
-                <div className="bg-red-900/50 text-neonRed p-3 rounded-md mb-4 text-sm font-futuristic animate-fadeIn">
+                <div className="bg-red-400 border-2 border-red-900 font-mono p-3 rounded-md mb-4 text-sm animate-fadeIn text-gray-800">
                   {otpError}
                 </div>
               )}
@@ -231,11 +231,10 @@ function Login() {
                     <div>
                       <input
                         {...register("email", {
-                          required: "Email is required",
                         })}
                         type="email"
                         placeholder="Email"
-                        autoComplete="email"
+                        autoComplete="off"
                         className={`w-full p-3 bg-[#272f6d] rounded-md focus:outline-none focus:ring-2 text-white placeholder-gray-400 font-futuristic ${
                           errors.email
                             ? "border-neonRed focus:ring-neonRed"
@@ -249,11 +248,10 @@ function Login() {
                     <div>
                       <input
                         {...register("password", {
-                          required: "Password is required",
                         })}
                         type="password"
                         placeholder="Password"
-                        autoComplete="current-password"
+                        autoComplete="off"
                         className={`w-full p-3 bg-[#272f6d] rounded-md focus:outline-none focus:ring-2 text-white placeholder-gray-400 font-futuristic ${
                           errors.password
                             ? "border-neonRed focus:ring-neonRed"
@@ -268,7 +266,7 @@ function Login() {
                     <button
                       type="submit"
                       disabled={isLoading}
-                      className={`w-full p-3 font-futuristic font-medium text-black rounded-md transition duration-300 ${
+                      className={`w-full font-futuristic font-bold p-3 text-black rounded-md transition duration-300 ${
                         isLoading
                           ? "bg-green-700/50 cursor-not-allowed animate-pulse"
                           : "cursor-pointer bg-green-600 hover:bg-green-900 hover:shadow-neon"
@@ -278,7 +276,7 @@ function Login() {
                     </button>
                   </form>
 
-                  <div className="mt-4 text-center">
+                  <div className="mt-3 text-center">
                     <button
                       onClick={() => setShowForgotPassword(true)}
                       className="cursor-pointer text-sm text-gray-300 font-futuristic hover:text-green-700 transition duration-300"
@@ -287,12 +285,12 @@ function Login() {
                     </button>
                   </div>
 
-                  <div className="mt-6 text-center">
+                  <div className="mt-1 text-center">
                     <p className="text-sm text-gray-300 font-futuristic">
                       Belum mempunyai akun?{" "}
                       <Link
                         to="/register"
-                        className="text-neonGreen font-futuristic font-medium hover:text-green-600 transition duration-300"
+                        className="text-sm text-neonGreen font-futuristic font-medium hover:text-green-600 transition duration-300"
                       >
                         Daftar di sini
                       </Link>
