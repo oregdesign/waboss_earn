@@ -17,6 +17,10 @@ app.use(cors({
 }));
 app.use(express.json());
 
+// waboss-backend/src/index.js
+const gameRoutes = require('./routes/game');
+app.use('/api/game', gameRoutes);
+
 // API routes
 app.use('/api', authRoutes);
 

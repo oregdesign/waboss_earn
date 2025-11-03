@@ -2,11 +2,13 @@
 import React from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Eye, EyeOff, CheckCircle, XCircle, Gift } from 'lucide-react';
+import { LogOut } from "lucide-react";
 import CarouselMobile from '../CarouselMobile';
 import WhatsappListMobile from '../WhatsappListMobile';
 import BonusPointer from '../BonusPointer'; // ✅ Import the new component
 import Lottie from 'lottie-react';
 import bonusAnimation from '../../assets/GiftBox.json';
+
 
 const MobileLayout = ({
   user,
@@ -192,17 +194,17 @@ const MobileLayout = ({
       {/* Main Content */}
       <div className="p-2 flex-1 overflow-y-auto pb-20 space-y-4 m-custom-scrollbar pr-4">
         {/* Welcome User & Logout */}
-        <div className="grid grid-cols-2 p-1">
+        <div className="grid grid-cols-2 bg-[#191e45] p-3 rounded-lg ">
           <div>
-            <p className="text-gray-400 text-sm quicksan-content">Selamat datang,</p>
+            <p className="text-gray-400 text-sm quicksand-content">Selamat datang,</p>
             <p className="text-xl quicksand-title text-green-600">{user?.username}</p>
           </div>
           <div className="justify-items-end">
             <button
               onClick={handleLogout}
-              className="text-right w-full rounded-lg text-gray-300 hover:text-green-600 transition duration-300 cursor-pointer"
+              className=" bg-amber-200 w-full rounded-lg text-gray-400 hover:text-green-600 transition duration-300 cursor-pointer text-sm quicksand-content"
             >
-              Keluar
+              <LogOut className="w-5 h-5 absolute inset-y-5 right-8" />
             </button>
           </div>
         </div>

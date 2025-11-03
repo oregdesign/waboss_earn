@@ -22,3 +22,7 @@ Thumbs.db
 # Sensitive files
 .env
 config/secrets.yml
+.env.production
+waboss-deploy.tar.gz
+waboss-update.tar.gz
+dist.tar.gz

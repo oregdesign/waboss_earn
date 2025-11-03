@@ -8,6 +8,7 @@ import { useRewards } from "../../hooks/useRewards";
 import LinkWhatsAppModal from "../components/dashboard/LinkWhatsAppModal";
 import MobileLayout from "../components/dashboard/MobileLayout";
 import DesktopLayout from "../components/dashboard/DesktopLayout";
+import ReferralDashboard from '../components/ReferralDashboard';
 
 function Dashboard() {
   const navigate = useNavigate();
@@ -142,7 +143,7 @@ function Dashboard() {
   const displayBalance = (earnings.total_earnings || 0) + bonusBalance;
 
   return (
-    <div className="min-h-screen bg-gradient-to-bl from-green-900 to-indigo-800 p-4 overflow-hidden">
+    <div className="min-h-screen w-screen bg-gradient-to-bl from-green-900 to-indigo-800 p-4 overflow-hidden">
       <LinkWhatsAppModal
         isModalOpen={isModalOpen}
         setIsModalOpen={setIsModalOpen}
@@ -197,6 +198,7 @@ function Dashboard() {
         bonusBalance={bonusBalance}
         onClaimBonus={handleClaimBonus}
       />
+      <ReferralDashboard />
     </div>
   );
 }
